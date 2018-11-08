@@ -9,6 +9,7 @@
 define data
 local
 1 #a (a10) init <'teste'>
+1 #b (n07)
 end-define
 write #a
 END
