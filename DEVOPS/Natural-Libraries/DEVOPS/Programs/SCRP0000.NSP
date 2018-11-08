@@ -1,0 +1,98 @@
+* >Natural Source Header 000000
+* :Mode S
+* :CP
+* :LineIncrement 10
+* <Natural Source Header
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+* SISTEMA    : Sistema de Identificacao Criminal             *
+* PROGRAMA   : SCRP0000                                      *
+* OBJETIVO   : ENTRADA NO SISTEMA TELA INICIAL               *
+* ANALISTA   : SOLON MIRANDA                                 *
+* AUTOR      : JOSE ANTONIO COELHO                           *
+* DATA       : 29 DE JULHO DE 1997                           *
+* ALTERACAO  : 04/02/1998  POR SOLON MIRANDA                 *
+* ADAPTACOES PARA IPC - PB : MARIA GORETE MEDEIROS - CODATA  *
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+DEFINE DATA
+GLOBAL USING SCRG001
+LOCAL  USING SICSENHA
+LOCAL  USING SCRLNUME
+LOCAL
+1 #CONT      (N02)
+1 #MATRICULA (N07)
+1 #SENHA     (A06)
+1 #NSENH     (A06)
+1 #WSENH     (A06)
+1 #ULT-NUM   (N11)
+1 #TIME      (A08)
+1 REDEFINE #TIME
+  2 #H       (N02)
+  2 FILLER 1X
+  2 #M       (N02)
+  2 FILLER 1X
+  2 #S       (N02)
+1 #HORARIO   (N06)
+1 REDEFINE #HORARIO
+  2 #HH      (N02)
+  2 #MM      (N02)
+  2 #SS      (N02)
+1 #CHAVE     (A01)
+1 #ISN (P8)
+END-DEFINE
+SET KEY ALL
+SET CONTROL 'MB'
+#PROGRAMA# := *PROGRAM
+REPEAT
+MOVE *TIMX TO #TIME
+MOVE #H TO #HH
+MOVE #M TO #MM
+MOVE #S TO #SS
+INPUT USING MAP 'SCRM0000'
+if *pf-key eq 'pf3'
+ fetch 'sair'
+end-if
+*
+FD1. FIND (1) SENHA-VIEW WITH SEN-MATRICULA = #MATRICULA
+     MOVE *ISN TO #ISN
+     ADD 1 TO #CONT
+     IF #CONT = 3
+        INPUT NO ERASE ALARM 18/14
+     'Voce ultrapassou o numero maximo de tentativas - Tecle <ENTER>'(I)
+        TERMINATE
+     END-IF
+     IF #SENHA NE SEN-SENHA
+        REINPUT 'Verifique corretamente sua senha' MARK *#SENHA ALARM
+        TERMINATE
+     END-IF
+     MOVE SEN-NIVEL TO #NIVEL#
+     #SENHA#     := #SENHA
+     IF #NSENH NE ' '
+        INPUT NO ERASE(SG=OFF IP=OFF AD=ANT'_')
+        20/52 'Nova Senha:'(I) #WSENH
+        23/07 'Informe nova senha p/ confirmacao             '(I)
+        IF #NSENH NE #WSENH
+           INPUT NO ERASE 23/07
+           'Confirmacao invalida - Tecla <ENTER>             ' (I)
+           FETCH 'SCRP0000'
+        ELSE
+           SENHA-VIEW.SEN-SENHA := #WSENH
+           UPDATE(FD1.)
+           END TRANSACTION
+           MOVE #WSENH TO #SENHA#
+        END-IF
+     END-IF
+END-FIND
+IF *COUNTER(FD1.) = 0
+    REINPUT 'Usuario nao cadastrado no sistema' ALARM
+    TERMINATE
+ELSE
+  G1. GET SENHA-VIEW #ISN
+    MOVE SENHA-VIEW.SEN-SENHA TO SENHA-VIEW.SENHA-DIGITADA
+    UPDATE(G1.)
+    END TRANSACTION
+END-IF
+#MATRICULA# := #MATRICULA
+BACKOUT TRANSACTION
+FETCH 'SCRPP001'
+END-REPEAT
+END

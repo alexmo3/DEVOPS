@@ -1,0 +1,70 @@
+* >Natural Source Header 000000
+* :Mode S
+* :CP
+* :LineIncrement 10
+* <Natural Source Header
+* ---------------------------------------------------------- * 
+* SISTEMA    : Sistema de Identificacao Criminal             *
+* PROGRAMA   : SCRP3000                                      * 
+* ANALISTA   : VERONICA LEAL                                 * 
+* DATA       : 28.03.2017                                    * 
+* OBJETIVO   : MENU DE ESTATISTICA (CONSULTA ATESTADOS)      * 
+* ---------------------------------------------------------- * 
+DEFINE DATA
+GLOBAL USING SCRG001
+LOCAL
+1 #PROGRAM   (A08) INIT  <*PROGRAM>
+1 #MATRICULA (N07)
+1 #SENHA     (A06)
+1 #NSENH     (A06)
+1 #OPCAO     (N01) 
+1 #FICHA     (N11)
+1 #IMP       (A08)
+END-DEFINE
+INCLUDE SISCPFS
+*
+REPEAT
+  SET CONTROL 'MB'
+* INPUT USING MAP 'SCRM3000' 
+  INPUT USING MAP 'SCRM300V'  /* VERONICA - 28.03.17 
+  IF *PF-KEY =  'PF3'
+    FETCH 'SCRPP001'
+  END-IF
+*
+  DECIDE ON FIRST VALUE OF #OPCAO 
+    VALUE 1 
+      IF #NIVEL# LT 2
+        REINPUT 'Usuario nao autorizado' ALARM
+      ELSE
+         FETCH 'SCRP3100'     /* Cadastrados 
+      END-IF
+    VALUE 2 
+      IF #NIVEL# LT 2
+        REINPUT 'Usuario nao autorizado' ALARM
+      ELSE
+          FETCH 'SCRP3200'   /* Emitidos num Periodo 
+      END-IF
+    VALUE 3 
+      IF #NIVEL# LT 2
+        REINPUT 'Usuario nao autorizado' ALARM
+      ELSE
+        FETCH 'SCRP3300'     /* Emitidos por Nome 
+      END-IF
+    VALUE 4 
+      IF #NIVEL# LT 2
+        REINPUT 'Usuario nao autorizado' ALARM
+      ELSE
+        FETCH 'SCRP3400'     /* Emitidos por Finalidade 
+      END-IF
+    VALUE 5 
+      IF #NIVEL# LT 2
+        REINPUT 'Usuario nao autorizado' ALARM
+      ELSE
+        FETCH 'SCRP3510'     /* Solicitados 
+      END-IF
+    NONE
+      REINPUT  'OPCAO INVALIDA'  MARK *#OPCAO ALARM 
+  END-DECIDE
+  INCLUDE SCRCERRO
+END-REPEAT
+END

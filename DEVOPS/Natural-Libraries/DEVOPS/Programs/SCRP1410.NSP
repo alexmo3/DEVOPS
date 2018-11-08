@@ -1,0 +1,138 @@
+* >Natural Source Header 000000
+* :Mode S
+* :CP
+* :LineIncrement 10
+* <Natural Source Header
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+* SISTEMA    : SISTEMA DE IDENTIFICACAO CRIMINAL                      *
+* PROGRAMA   : SCRP001                                                *
+* O QUE FAZ  ? RELATORIO DA FICHA INDICE CRIMINAL                     *
+* AUTOR      : JOSE ANTONIO COELHO                                    *
+* DATA       : 11 DE SETEMBRO DE 1997                                 *
+* ALTERACAO  : MARIA GORETE MEDEIROS           OUT/99                 *
+*            ALTERADO PARA MOSTRAR FICHAS SIMPLIFICADAS, E NAO A LISTA*
+*                DE DIGITADORES COM QTDE DIGITADA, COMO ANTERIORMENTE *
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*
+DEFINE DATA
+GLOBAL USING SCRG001
+LOCAL USING SCRLCRIM
+LOCAL USING SCRLSENH
+LOCAL USING TABLELE
+LOCAL
+* ------------------------------------
+1 #DATA-INI       (N08)
+1 REDEFINE #DATA-INI
+  2 #ANO-INI      (N04)
+  2 #MES-INI      (N02)
+  2 #DIA-INI      (N02)
+1 #DATA-FIM       (N08)
+1 REDEFINE #DATA-FIM
+  2 #ANO-FIM      (N04)
+  2 #MES-FIM      (N02)
+  2 #DIA-FIM      (N02)
+1 #REG-CRIMINAL  (A11/1:15)
+1 #NOMEIDE        (A60/1:15)
+1 #IMPRIMIR      (A01)
+1 #VARIMP        (C) INIT <(AD=I)>
+1  MAE           (A60/1:15)
+1 #DATA_NASC     (N08)
+1 #DATA-NASC      (A10/1:15)
+1 #DATA-ALT-STATUS  (N08)
+1 REDEFINE #DATA-ALT-STATUS
+  2 #ANO-ALT-STATUS (N04)
+  2 #MES-ALT-STATUS (N02)
+  2 #DIA-ALT-STATUS (N02)
+1 #DATA-REGISTRO (N08)
+1 REDEFINE  #DATA-REGISTRO
+  2 #ANO-REG (N04)
+  2 #MES-REG (N02)
+  2 #DIA-REG (N02)
+1 #DATA-ATUACAO (N08)
+1 REDEFINE  #DATA-ATUACAO
+  2 #ANO-ATUACAO (N04)
+  2 #MES-ATUACAO (N02)
+  2 #DIA-ATUACAO (N02)
+* -------------------------
+1 I(N2)
+1 #J(N4)
+1 #L(N4)
+1 #M(N4)
+1 #X(N4)
+1 #Y(N4)
+1 #W(N4)
+* -------------------------
+1 #MATRICULA (N07)
+1 MATRICULA    (A07/1:15)
+1 #NOME-DIGITADOR (A30)
+1 #DATA-DIG (N08)
+1 REDEFINE #DATA-DIG
+  2 #ANO-DIG (N04)
+  2 #MES-DIG (N02)
+  2 #DIA-DIG (N02)
+1 #HORARIO   (N08)
+1 #FICHA1    (N11)
+1 #FICHA2    (N11)
+1 #MENSAGEM  (A70)
+1 #FUNCAO    (A10) INIT <'Consulta'>
+1 #FUNC      (A10) INIT <'ERROS'>
+1 DESCEL     (A29)
+1 #OPCAO     (N02)
+END-DEFINE
+*
+FORMAT (1) PS=60 LS=80
+SET KEY ALL
+INPUT #DATA-INI #DATA-FIM #MATRICULA
+I:=1
+FD33. FIND CRIMINAL-VIEW WITH DATA-REG    = #DATA-INI THRU #DATA-FIM
+    WHERE STATUS-REG NE 5
+  ACCEPT IF MATFUNC-ATU = #MATRICULA OR #MATRICULA = 0
+**-------------------     DADOS        -------------------------------*
+* #DATA-DIG         := CRIMINAL-VIEW.DATA-REG  /* DATA INCLUSAO
+  #DATA_NASC := DATA-NASC
+  PERFORM SISSD002 #DATA_NASC
+  MOVE EDITED #DATA_NASC    (EM=99/99/9999)  TO #DATA-NASC(I)
+  MOVE EDITED CRIMINAL-VIEW.REGISTRO-ESTADUAL-GERAL (EM=99999999999)
+    TO #REG-CRIMINAL(I)
+  MOVE  EDITED  MATFUNC-ATU (EM=9999999)      TO  MATRICULA(I)
+  MOVE          NOME-COMPLETO                 TO #NOMEIDE(I)
+  MOVE          NOME-MAE                      TO MAE(I)
+  ADD 1 TO I
+*  IF #MATRICULA NE 0
+*    FD2. FIND (1) SENHA-VIEW WITH SEN-MATRICULA = #MATRICULA
+*      MOVE SEN-NOME TO #NOME-DIGITADOR
+*    END-FIND
+*  END-IF
+  SET KEY PF3='SCRP1400'
+  SET KEY PF1='%W>' PF2='%W<'
+  IF I = 16
+    I := 1
+    INPUT USING MAP  'SCRM1401'
+    IF #OPCAO NE 0
+     FETCH 'SCRP1411'  #REG-CRIMINAL(#OPCAO)
+           #DATA-INI #DATA-FIM #MATRICULA
+    END-IF
+RESET #REG-CRIMINAL(*) MATRICULA(*)
+        #NOMEIDE(*) MAE(*)
+  END-IF
+* IF #IMPRIMIR = 'S'
+*   FETCH 'SCRP1610' #DATA-INI
+* END-IF
+  AT END OF DATA
+  IF I GT 1
+    INPUT USING MAP  'SCRM1401'
+    IF #OPCAO NE 0
+     FETCH 'SCRP1411'  #REG-CRIMINAL(#OPCAO)
+           #DATA-INI #DATA-FIM #MATRICULA
+    END-IF
+  END-IF
+    FETCH 'SCRP1400'
+  END-ENDDATA
+END-FIND
+IF *COUNTER(FD33.) = 0
+  MOVE
+    '               Nenhuma Ficha Foi Cadastrada Nesse Periodo.'
+    TO #MENSAGEM
+  INPUT USING MAP 'SCRMERRO'
+END-IF
+FETCH 'SCRP1400'
+END

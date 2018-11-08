@@ -1,0 +1,143 @@
+* >Natural Source Header 000000
+* :Mode S
+* :CP
+* :LineIncrement 10
+* <Natural Source Header
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+* SISTEMA    : Sistema de Identificacao Criminal             *
+* PROGRAMA   : SCRP130A                                      *
+* O QUE FAZ  ? Exclusao da Ficha Indice Criminal             *
+* Autor      : Jose Antonio Coelho                           *
+* Data       : 29 de Setembro de 1997                        *
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+* Mapas      : SCRM2000, SCRM111A, SCRMERRO                  *
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+DEFINE DATA
+GLOBAL USING SCRG001
+LOCAL USING SCRLCRIM
+LOCAL USING SCRLSENH
+LOCAL
+* ------------------------------------
+1 #EMPRESA        (A08) INIT <' CODATA '>
+1 #PROGRAM        (A08) INIT <*PROGRAM>
+1 #DATA-INI       (N08)
+1 REDEFINE #DATA-INI
+  2 #ANO-INI      (N04)
+  2 #MES-INI      (N02)
+  2 #DIA-INI      (N02)
+1 #DATA-FIM       (N08)
+1 REDEFINE #DATA-FIM
+  2 #ANO-FIM      (N04)
+  2 #MES-FIM      (N02)
+  2 #DIA-FIM      (N02)
+1 #REG_GERAL     (N11)
+1 #NOME-COMPLETO (A60)
+1 #MAE           (A60)
+1 #DATA_NASC     (N08)
+1 REDEFINE  #DATA_NASC
+  2 ANAS (A04)
+  2 MNAS (A02)
+  2 DNAS (A02)
+1 DEDOS (A07/1:5,1:2)
+1 #PAI (A60)
+1 #MAE-LIMPA (A60)
+1 #ALCUNHA (A30)
+1 #COD-MUN-NASCIMENTO (N04)
+1 #UF-NASCIMENTO (A02)
+1 #DOC-APRESENTADO (A30)
+1 #NUM-DOC-APRESENTADO (N11)
+1 #NATURALIDADE (A35)
+* -------------------------
+1 #OCORRENCIA     (N03)
+1 #OBSERVACOES    (A77/1:4)
+1 #ALARM          (N02)
+1 #NATURAL        (A30)
+1 #MATRICULA (N07)
+1 #NOME-DIGITADOR (A30)
+1 #DATA-DIG (N08)
+1 REDEFINE #DATA-DIG
+  2 #ANO-DIG (N04)
+  2 #MES-DIG (N02)
+  2 #DIA-DIG (N02)
+1 #HORARIO   (N08)
+1 #FICHA1    (N11)
+1 #FICHA2    (N11)
+1 #VAR       (A01)
+1 CHAVE      (A01) INIT <'C'>
+1 #MENSAGEM  (A70)
+1 #CV-REG-GER  (C) INIT <(AD=IP)>
+1 #CV-MAE       (C) INIT <(AD=IP)>
+1 #CV-NOME      (C) INIT <(AD=IP)>
+1 #CV-D         (C) INIT <(AD=IP)>
+1 #CV-M         (C) INIT <(AD=IP)>
+1 #CV-A         (C) INIT <(AD=IP)>
+1 #CONF         (A01)
+END-DEFINE
+*
+FORMAT (1) PS=60 LS=80
+SET KEY ALL
+#PROGRAMA# := *PROGRAM
+#FUNCAO#  := 'Exclusao'
+SET CONTROL 'MB'
+  INPUT USING MAP  'SCRM2000'
+  IF *PF-KEY = 'PF3'
+     FETCH 'SCRP1000'
+  END-IF
+  FD33. FIND CRIMINAL-VIEW
+      WITH REGISTRO-ESTADUAL-GERAL  = #REG_GERAL
+      IF STATUS-REG EQ 5
+         REINPUT 'Ficha Criminal ja" foi Excluida anteriormente' ALARM
+      END-IF
+* ------------------------- Recupera os Dados ------------------------ *
+*                                                                      *
+    #REG_GERAL          := CRIMINAL-VIEW.REGISTRO-ESTADUAL-GERAL
+    #NOME-COMPLETO      := CRIMINAL-VIEW.NOME-COMPLETO
+    #MAE                := CRIMINAL-VIEW.NOME-MAE
+    #DATA_NASC          := CRIMINAL-VIEW.DATA-NASC
+    #PAI                := CRIMINAL-VIEW.NOME-PAI
+    #ALCUNHA            := CRIMINAL-VIEW.APELIDO-ALCUNHAS
+    #NATURAL            := CRIMINAL-VIEW.NATURALIDADE
+    #COD-MUN-NASCIMENTO :=  CRIMINAL-VIEW.COD-MUNICIPIO-NASCIMENTO
+    #UF-NASCIMENTO      :=   CRIMINAL-VIEW.UF-NATURALIDADE
+    #OCORRENCIA         := 1
+    #OBSERVACOES(1:4)   :=   CRIMINAL-VIEW.OBS(1:4)
+    #DATA-DIG           := CRIMINAL-VIEW.DATDOC-ATU
+    #MATRICULA          := CRIMINAL-VIEW.MATFUNC-ATU
+    #HORARIO            := CRIMINAL-VIEW.HORA-ATU
+    MOVE #DATA-DIG TO #DATA-INI
+    FD2. FIND (1) SENHA-VIEW WITH SEN-MATRICULA = #MATRICULA
+      MOVE SEN-NOME TO #NOME-DIGITADOR
+    END-FIND
+  SET CONTROL 'N'
+    INPUT USING MAP  'SCRM111A'
+  INPUT NO ERASE ALARM 15/29
+    'CONFIRMACAO..(S/N).:'(I) #CONF(AD=AIT'_')
+  SET KEY PF3 ENTR
+  IF NOT (*PF-KEY = 'PF3' OR = 'ENTR')
+    REINPUT 'Tecla invalida' ALARM
+  END-IF
+  IF *PF-KEY = 'PF3'
+    FETCH 'SCRP1000'
+  END-IF
+  IF NOT (#CONF = 'S' OR = 'N')
+     REINPUT 'Confirmacao invalida' ALARM
+  END-IF
+  IF #CONF = 'N'
+     BACKOUT TRANSACTION
+     FETCH 'SCRP130A'
+  ELSE
+     CRIMINAL-VIEW.STATUS-REG := 5
+     CRIMINAL-VIEW.TIPO-REG   := 'EX'
+     UPDATE(FD33.)
+     END TRANSACTION
+     FETCH 'SCRP130A'
+  END-IF
+END-FIND
+IF *COUNTER(FD33.) = 0
+  MOVE
+'                   Nenhuma Ficha Criminal Foi Encontrada'
+    TO #MENSAGEM
+  INPUT USING MAP 'SCRMERRO'
+FETCH 'SCRP130A'
+END-IF
+END

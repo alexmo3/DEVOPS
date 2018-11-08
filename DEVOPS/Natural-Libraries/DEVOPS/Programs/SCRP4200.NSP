@@ -1,0 +1,76 @@
+* >Natural Source Header 000000
+* :Mode S
+* :CP
+* :LineIncrement 10
+* <Natural Source Header
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+* SISTEMA    : Sistema de Identificacao Criminal             *
+* PROGRAMA   : SCRP4200                                      *
+* OBJETIVO   : MENU DE CONSULTA  INFOSEG                     *
+* ALTERACAO  : MARCO 2004*
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+DEFINE DATA
+* -------------------------
+GLOBAL USING SCRG001
+LOCAL
+1 #EMPRESA   (A08) INIT <' CODATA '>
+1 #PROGRAM   (A08) INIT  <*PROGRAM>
+1 #MATRICULA (N07)
+1 #SENHA     (A06)
+1 #NSENH     (A06)
+1 #OPC       (N01/1:4)
+1 OPC0       (A01/1:5)
+1 #FUNC      (A10) INIT <'INFOSEG'>
+1 #CURSOR    (N06)
+1 #FICHA     (N11)
+1 #IMP       (A08)
+1 #ATUAL     (A01)
+END-DEFINE
+INCLUDE SISCPFS
+*
+REPEAT
+  SET CONTROL 'MB'
+  INPUT USING MAP 'SCRM4200'
+  IF *PF-KEY =  'PF3'
+    FETCH 'SCRP4000'
+  END-IF
+*
+  DECIDE ON FIRST VALUE OF *CURSOR
+    VALUE 10050
+      IF #NIVEL# LT 4
+        REINPUT 'Usuario nao autorizado' ALARM
+      ELSE
+       FETCH 'SCRP4210' /* REMESSAS GERADAS
+      END-IF
+    VALUE 12050            /* ULTIMA MOVIMENTACAO
+      IF #NIVEL# LT 7
+        REINPUT 'Usuario nao autorizado' ALARM
+      ELSE
+          FETCH 'SCRP4230'
+      END-IF
+    VALUE 14050 /* REJEICOES DA REMESSA
+      IF #NIVEL# LT 7
+        REINPUT 'Usuario nao autorizado' ALARM
+      ELSE
+          FETCH 'SCRP4240'
+      END-IF
+    VALUE 16050  /* REGISTROS NAO ENVIADOS
+      IF #NIVEL# LT 7
+        REINPUT 'USUARIO NAO AUTORIZADO' ALARM
+      ELSE
+          FETCH 'SCRP4250' /* REGISTROS NAO ENVIADOS ***
+      END-IF
+    VALUE 18050  /* FLAGS DA REMESSA
+      IF #NIVEL# LT 7
+        REINPUT 'Usuario nao autorizado' ALARM
+      ELSE
+          FETCH 'SCRP4220' /* REGISTROS NAO ENVIADOS ***
+*         REINPUT 'ROTINA EM IMPLANTACAO' ALARM /* RELATORIOS
+      END-IF
+    NONE
+      REINPUT  'Posicione o cursor na posicao desejada e tecle <ENTER>'
+        ALARM
+  END-DECIDE
+  INCLUDE SCRCERRO
+END-REPEAT
+END

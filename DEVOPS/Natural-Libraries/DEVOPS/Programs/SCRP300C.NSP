@@ -1,0 +1,78 @@
+* >Natural Source Header 000000
+* :Mode S
+* :CP
+* :LineIncrement 10
+* <Natural Source Header
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+* SISTEMA    : Sistema de Identificacao Criminal             *
+* PROGRAMA   : SCRP4000                                      *
+* OBJETIVO   : MENU DE RELATORIOS                            *
+* DATA       : 30 DE SETEMBRO DE 2002                        *
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+DEFINE DATA
+* -------------------------
+GLOBAL USING SCRG001
+LOCAL
+1 #EMPRESA   (A08) INIT <' CODATA '>
+1 #PROGRAM   (A08) INIT  <*PROGRAM>
+1 #MATRICULA (N07)
+1 #SENHA     (A06)
+1 #NSENH     (A06)
+* 1 #OPC       (N01/1:5)
+1 OPC0       (A01/1:5)
+1 #FUNC      (A10) INIT <'CONSULTAS'>
+1 #CURSOR    (N06)
+1 #FICHA     (N11)
+1 #IMP       (A08)
+END-DEFINE
+INCLUDE SISCPFS
+*
+REPEAT
+  SET CONTROL 'MB'
+  INPUT USING MAP 'SCRM3000'
+  IF *PF-KEY =  'PF3'
+    FETCH 'SCRPP001'
+  END-IF
+*
+  DECIDE ON FIRST VALUE OF *CURSOR
+    VALUE 09045
+      IF #NIVEL# LT 2
+        REINPUT 'Usuario nao autorizado' ALARM
+      ELSE
+*       REINPUT 'ROTINA EM IMPLANTACAO' ALARM
+         FETCH 'SCRP3100'     /* CONSULTA
+      END-IF
+    VALUE 11045
+      IF #NIVEL# LT 2
+        REINPUT 'Usuario nao autorizado' ALARM
+      ELSE
+          FETCH 'SCRP3200'
+      END-IF
+    VALUE 13045
+      IF #NIVEL# LT 2
+        REINPUT 'Usuario nao autorizado' ALARM
+      ELSE
+        FETCH 'SCRP3300'
+*       REINPUT 'ROTINA EM IMPLANTACAO' ALARM /* RELATORIOS
+      END-IF
+    VALUE 15045
+      IF #NIVEL# LT 2
+        REINPUT 'Usuario nao autorizado' ALARM
+      ELSE
+        FETCH 'SCRP3400'
+*       REINPUT 'ROTINA EM IMPLANTACAO' ALARM /* RELATORIOS
+      END-IF
+    VALUE 17045
+      IF #NIVEL# LT 2
+        REINPUT 'Usuario nao autorizado' ALARM
+      ELSE
+        FETCH 'SCRP3510'
+*       REINPUT 'ROTINA EM IMPLANTACAO' ALARM /* RELATORIOS
+      END-IF
+    NONE
+      REINPUT  'Posicione o cursor na posicao desejada e tecle <ENTER>'
+        ALARM
+  END-DECIDE
+  INCLUDE SCRCERRO
+END-REPEAT
+END

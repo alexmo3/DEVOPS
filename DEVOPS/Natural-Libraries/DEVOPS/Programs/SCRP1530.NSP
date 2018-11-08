@@ -1,0 +1,99 @@
+* >Natural Source Header 000000
+* :Mode S
+* :CP
+* :LineIncrement 10
+* <Natural Source Header
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+* SISTEMA    : Sistema de Identificacao Criminal             *
+* PROGRAMA   : SCRPSEN3                                      *
+* O QUE FAZ  ? Manutencao de Usuarios                        *
+* Autor      : Jose Antonio Coelho                           *
+* Data       : 21 de Agosto de 1997                          *
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+DEFINE DATA
+GLOBAL USING SCRG001
+LOCAL  USING SCRLSENH
+LOCAL
+1 #NOME-CADASTRADO      (A30)
+1 #MATRICULA-CADASTRADO (N07)
+1 #SENHA-CADASTRADO     (A06)
+1 #SEU-NIVEL-TXT        (A22)
+1 #SEU-NIVEL            (A02)
+1 #NOME-CADASTROU       (A30)
+1 #MATRICULA-CADASTROU  (N07)
+1 #FUNC                 (A09) INIT <'CONSULTA'> 
+1 #OPCAO                (N01)
+1 #IMP                  (A08)
+1 #NOME-DO-MES          (A09)
+1 #HORARIO              (A08) INIT <*TIMX>
+1 #SENHA-ARQ            (A06)
+1 #HORA                 (A08)
+1 REDEFINE #HORA
+  2 #HH   (N02)
+  2 FILLER 01X
+  2 #MM   (N02)
+  2 FILLER 01X
+  2 #SS   (N02)
+1 #HORAS                (N06)
+1 REDEFINE #HORAS
+  2 #HHH                (N02)
+  2 #MMM                (N02)
+  2 #SSS                (N02)
+1 #DATA                 (N08)
+1 REDEFINE #DATA
+  2 #ANO       (N04)
+  2 #MESX      (N02)
+  2 #DIA       (N02)
+1 #CONF        (A01)
+1 #TIPO        (N01) INIT <2>
+1 #VAR         (C) INIT <(AD=IP)>
+1 #VAR1        (C)
+1 #VAR2        (C)
+1 #VAR3        (C) INIT <(AD=PN)>
+1 #TAB-MES     (A09/1:12)
+  INIT <'Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+  'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'>
+END-DEFINE
+*
+SET  KEY ALL
+SET  CONTROL 'MB'
+#VLT# := 7
+MOVE *PROGRAM TO #PROGRAMA#
+INPUT USING MAP 'SCRM1400'
+IF #MATRICULA-CADASTRADO NE 0
+   FETCH 'SCRP1531' #MATRICULA-CADASTRADO
+END-IF
+IF #NOME-CADASTRADO = ' ' 
+  REINPUT 'Informe NOME ou MATRICULA p/consulta' 
+        mark *#NOME-CADASTRADO 
+END-IF 
+* 
+FD0. FIND SENHA-VIEW WITH SEN-NOME GE #NOME-CADASTRADO
+     SORTED  SEN-NOME
+    MOVE SEN-MAT-ATUALIZADOR TO #MATRICULA-CADASTROU
+    MOVE SEN-MATRICULA       TO #MATRICULA-CADASTRADO
+    MOVE SEN-NOME            TO #NOME-CADASTRADO
+    MOVE SEN-SENHA           TO #SENHA-ARQ
+    MOVE SEN-NIVEL           TO #SEU-NIVEL
+    MOVE SEN-NIVEL           TO #OPCAO
+    MOVE SEN-DATA-PROC       TO #DATA
+    MOVE SEN-HORA-PROC       TO #HORAS
+    MOVE #TAB-MES(#MESX)     TO #NOME-DO-MES
+    MOVE 'Seu nivel de acesso e"' TO #SEU-NIVEL-TXT
+    MOVE (AD=IP)  TO #VAR2
+    MOVE (AD=I)   TO #VAR
+    MOVE (AD=IN)  TO #VAR3
+    FD1. FIND (1) SENHA-VIEW WITH SEN-MATRICULA = #MATRICULA-CADASTROU
+                MOVE SEN-NOME  TO #NOME-CADASTROU
+    END-FIND
+    MOVE (AD=IP) TO #VAR #VAR1 #VAR2 #VAR3
+    INPUT USING MAP 'SCRM1400'
+    AT END OF DATA
+       INPUT NO ERASE ALARM
+             18/20 'FIM DE CONSULTA - TECLE <ENTER>' (I)
+       FETCH 'SCRP1530'
+    END-ENDDATA
+  END-FIND
+INCLUDE SCRCERRO
+END

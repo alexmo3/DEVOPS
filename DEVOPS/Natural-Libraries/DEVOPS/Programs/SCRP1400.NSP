@@ -1,0 +1,188 @@
+* >Natural Source Header 000000
+* :Mode S
+* :CP
+* :LineIncrement 10
+* <Natural Source Header
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+* SISTEMA    : Sistema de Identificacao Criminal             *
+* PROGRAMA   : SCRP1400                                      *
+* O QUE FAZ  ? Consultas                                     *
+* Autor      : Jose Antonio Coelho                           *
+* Data       : 11 de Setembro de 1997                        *
+* ADAPATCAO PARA IPC : GORETE MEDEIROS - CODATA - 98         *
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+DEFINE DATA
+GLOBAL USING SCRG001
+LOCAL
+1 CRIMINAL VIEW OF SIC-CADASTRO
+  2 REGISTRO-ESTADUAL-GERAL
+  2 DATDOC-ATU
+  2 MATFUNC-ATU
+  2 DATA-ALTERACAO-STATUS
+  2 STATUS-REG
+1 #OPC (A01/1:3)
+1 ESTOURO   (N02)
+1 #DATA-INI (N08)
+1 REDEFINE #DATA-INI
+  2 #ANO-INI (N04)
+  2 #MES-INI (N02)
+  2 #DIA-INI (N02)
+1 #DATA-FIM (N08)
+1 REDEFINE #DATA-FIM
+  2 #ANO-FIM (N04)
+  2 #MES-FIM (N02)
+  2 #DIA-FIM (N02)
+1 #DATA      (N08) INIT <*DATN>
+1 #FICHA1    (N11)
+1 #FICHA2    (N11)
+1 #REG       (N18)
+1 #IMP       (A08)
+1 #STATUS    (N01)
+1 #DIGITADOR (N07)
+END-DEFINE
+SET KEY ALL
+SET CONTROL 'MB'
+*
+#FUNCAO# := 'Consultas'
+#PROGRAMA# := *PROGRAM
+INPUT USING MAP 'SCRM1410'
+DECIDE ON FIRST VALUE OF *CURSOR
+**
+  VALUE 11050        /* Consulta Determinada Ficha
+    FETCH 'SCRP1420'
+**
+  VALUE 13055        /* Quantidade de Ficha Cadastrada por Digitador
+    SET CONTROL 'WC08L35B09/40F'
+    INPUT (SG=OFF IP=OFF) ALARM
+   /   01T 'Data Inicial...' #DIA-INI(AD=AIL'_') '/' #MES-INI(AD=AIL'_')
+      '/' #ANO-INI (AD=AIL'_')
+   /   01T 'Data Final.....' #DIA-FIM(AD=AIL'_') '/' #MES-FIM(AD=AIL'_')
+      '/' #ANO-FIM (AD=AIL'_')
+      /   01T 'Matricula......' #DIGITADOR(AD=AIL'_')
+    IF NOT (*PF-KEY = 'PF3' OR = 'ENTR')
+      REINPUT 'Tecla invalida' ALARM
+    END-IF
+    IF *PF-KEY = 'PF3'
+      SET CONTROL 'WB'
+      FETCH 'SCRP1400'
+    END-IF
+    IF #DATA-INI NE MASK(YYYYMMDD)
+      REINPUT 'Data inicial invalida' MARK *#DIA-INI ALARM
+    END-IF
+    IF #DATA-INI GT #DATA
+      REINPUT 'Data invalida' MARK *#DIA-INI ALARM
+    END-IF
+    IF #DATA-FIM NE MASK(YYYYMMDD)
+      REINPUT 'Data final invalida' MARK *#DIA-FIM ALARM
+    END-IF
+    IF #DATA-FIM LT #DATA-INI
+      REINPUT 'Data final invalida' MARK *#DIA-FIM ALARM
+    END-IF
+    IF #DATA-FIM GT #DATA
+      REINPUT 'Data final invalida' MARK *#DIA-FIM ALARM
+    END-IF
+**--------------------------------------------------------------------*
+*  FETCH 'SCRP1440' #DATA-INI #DATA-FIM   ****ERRO NO SORT****        *
+* SCRP1440 - LISTA DIGITADORES E QTDE DIGITADA.                       *
+*             RETIRADO A PEDIDO DE ALEXANDRE                          *
+**--------------------------------------------------------------------*
+    RESET #REG
+    FD33. FIND CRIMINAL WITH DATDOC-ATU = #DATA-INI THRU #DATA-FIM
+*   FD33. FIND CRIMINAL WITH DATA-REG   = #DATA-INI THRU #DATA-FIM
+        WHERE STATUS-REG NE 5
+      ACCEPT IF (MATFUNC-ATU = #DIGITADOR) OR (#DIGITADOR = 0)
+      ADD 1 TO #REG
+  ADD 1 TO ESTOURO
+  IF ESTOURO = 50
+    SET CONTROL 'N'
+    INPUT NO ERASE WITH TEXT 'AGUARDE...PROCESSANDO' 05/01 ' '
+  RESET ESTOURO
+* SET CONTROL 'MB'
+  END-IF
+    END-FIND
+    SET CONTROL 'WB'
+    SET CONTROL 'WC08L35B09/40F'
+    INPUT (SG=OFF IP=OFF) ALARM
+      02/01 'Foram digitadas' #REG(AD=OIL EM=ZZ.ZZ9) 'Fichas'
+      03/01 '        nesse periodo                          '
+      04/02 'Tecle' '<ENTER>'(I) 'P/ Prosseguir'
+      05/02 '     OU' '<PF3>'(I) 'P/ Retornar'
+    SET CONTROL 'WB'      /* GORETE
+    IF NOT (*PF-KEY = 'PF3' OR = 'ENTR')
+      REINPUT 'Tecla invalida' ALARM
+    END-IF
+    IF *PF-KEY = 'PF3'
+      FETCH 'SCRP1400'
+    ELSE
+      FETCH 'SCRP1410' #DATA-INI #DATA-FIM #DIGITADOR
+    END-IF
+**
+  VALUE 15059             /* Quantidade de Ficha por Status do Registro
+    SET CONTROL 'WC08L35B09/40F'
+    INPUT (SG=OFF IP=OFF) ALARM
+   /   01T 'Data Inicial...' #DIA-INI(AD=AIL'_') '/' #MES-INI(AD=AIL'_')
+      '/' #ANO-INI (AD=AIL'_')
+   /   01T 'Data Final.....' #DIA-FIM(AD=AIL'_') '/' #MES-FIM(AD=AIL'_')
+      '/' #ANO-FIM (AD=AIL'_')
+      /   01T 'Status.........' #STATUS (AD=AIL'_')
+**  SET CONTROL 'WB'      /* GORETE
+    IF NOT (*PF-KEY = 'PF3' OR = 'ENTR')
+      REINPUT 'Tecla invalida' ALARM
+    END-IF
+    IF *PF-KEY = 'PF3'
+      SET CONTROL 'WB'
+      FETCH 'SCRP1400'
+    END-IF
+    IF #DIA-INI = 0 OR #MES-INI = 0 OR #ANO-INI = 0
+      REINPUT 'Data Inicial invalida' MARK *#DIA-INI ALARM
+    END-IF
+    IF #DATA-INI GT #DATA
+      REINPUT 'Data invalida' MARK *#DIA-INI ALARM
+    END-IF
+    IF #DIA-FIM = 0 OR #MES-FIM = 0 OR #ANO-FIM = 0
+      REINPUT 'Data Final invalida' MARK *#DIA-FIM ALARM
+    END-IF
+    IF #DATA-FIM LT #DATA-INI
+      REINPUT 'Data final invalida' MARK *#DIA-FIM ALARM
+    END-IF
+    IF #DATA-FIM GT #DATA
+      REINPUT 'Data final invalida' MARK *#DIA-FIM ALARM
+    END-IF
+    IF NOT (#STATUS = 1 OR = 2 OR = 3 OR = 4 OR = 6 OR = 7)
+      REINPUT 'Status Invalido' MARK *#STATUS  ALARM
+    END-IF
+    RESET #REG
+    FDST.   READ CRIMINAL BY DATA-ALTERACAO-STATUS STARTING FROM
+      #DATA-INI THRU #DATA-FIM
+  ADD 1 TO ESTOURO
+  IF ESTOURO = 50
+    SET CONTROL 'N'
+    INPUT NO ERASE WITH TEXT 'AGUARDE...PROCESSANDO' 05/01 ' '
+  RESET ESTOURO
+  SET CONTROL 'MB'
+  END-IF
+  ACCEPT IF STATUS-REG = #STATUS
+  ADD 1 TO #REG
+  END-READ
+    SET CONTROL 'WB'
+    SET CONTROL 'WC08L37B09/40F'
+    INPUT (SG=OFF IP=OFF) ALARM
+      02/01 'Foram encontradas' #REG(AD=OIL EM=ZZ.ZZ9) 'Fichas'
+      03/01 'nesse periodo com status = ' #STATUS (AD=OIL)
+      04/02 'Tecle' '<ENTER>'(I) 'P/ Prosseguir'
+      05/02 '     OU' '<PF3>'(I) 'P/ Retornar'
+    SET CONTROL 'WB'      /* GORETE
+    IF NOT (*PF-KEY = 'PF3' OR = 'ENTR')
+      REINPUT 'Tecla invalida' ALARM
+    END-IF
+    IF *PF-KEY = 'PF3'
+      FETCH 'SCRP1400'
+    END-IF
+    IF *PF-KEY = 'ENTR'
+      FETCH 'SCRP1412' #DATA-INI #DATA-FIM #STATUS
+    END-IF
+  NONE VALUE
+    IGNORE
+END-DECIDE
+INCLUDE SCRCERRO
+END

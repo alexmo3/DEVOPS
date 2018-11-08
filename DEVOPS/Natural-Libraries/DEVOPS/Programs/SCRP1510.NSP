@@ -1,0 +1,111 @@
+* >Natural Source Header 000000
+* :Mode S
+* :CP
+* :LineIncrement 10
+* <Natural Source Header
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+* SISTEMA    : Sistema de Identificacao Criminal             *
+* PROGRAMA   : SCRPSEN1                                      *
+* O QUE FAZ  ? Manutencao de Usuarios                        *
+* Autor      : Jose Antonio Coelho                           *
+* Data       : 20 de Agosto de 1997                          *
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+DEFINE DATA
+GLOBAL USING SCRG001
+LOCAL USING SCRLSENH
+LOCAL
+1 #NOME-CADASTRADO      (A30)
+1 #MATRICULA-CADASTRADO (N07)
+1 #SENHA-CADASTRADO     (A06)
+1 #SEU-NIVEL-TXT        (A22)
+1 #SEU-NIVEL            (A02)
+1 #NOME-CADASTROU       (A30)
+1 #MATRICULA-CADASTROU  (N07)
+1 #FUNC                 (A09) INIT <'INCLUSAO'>
+1 #OPCAO                (N01)
+1 #IMP                  (A01)
+1 #NOME-DO-MES          (A09)
+1 #HORARIO              (A08) INIT <*TIMX>
+1 #HORA                 (A08)
+1 REDEFINE #HORA
+  2 #HH  (N02)
+  2 FILLER 1X
+  2 #MM  (N02)
+  2 FILLER 1X
+  2 #SS  (N02)
+1 #HORAS                (N06)
+1 REDEFINE #HORAS
+  2 #HHH                (N02)
+  2 #MMM                (N02)
+  2 #SSS                (N02)
+1 #DATA                 (N08)
+1 REDEFINE #DATA
+  2 #ANO       (N04)
+  2 #MESX      (N02)
+  2 #DIA       (N02)
+1 #CONF        (A01)
+1 #TIPO        (N01) INIT <1>
+1 #VAR         (C) INIT <(AD=I)>
+1 #VAR1        (C)
+1 #VAR2        (C)
+1 #VAR3        (C) INIT <(AD=IN)>
+1 #TAB-MES     (A09/1:12)
+  INIT <'Janeiro','Fevereiro','Marco','Abril','Maio','Junho',
+  'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'>
+END-DEFINE
+*
+SET  KEY ALL
+SET  CONTROL 'MB'
+#VLT# := 5
+MOVE *TIMX TO #HORA
+MOVE #HH TO #HHH
+MOVE #MM TO #MMM
+MOVE #SS TO #SSS
+MOVE *DATN TO #DATA
+MOVE *PROGRAM TO #PROGRAMA#
+MOVE #TAB-MES(#MESX) TO #NOME-DO-MES
+* 
+FD1. FIND SENHA-VIEW WITH SEN-MATRICULA = #MATRICULA#
+  MOVE #MATRICULA# TO #MATRICULA-CADASTROU
+  MOVE SEN-NOME    TO #NOME-CADASTROU
+END-FIND
+* 
+INPUT USING MAP 'SCRM1400'
+FD2. FIND SENHA-VIEW WITH SEN-MATRICULA = #MATRICULA-CADASTRADO
+END-FIND
+IF *COUNTER(FD2.) GT 0
+  REINPUT 'Usuario Ja" Foi Cadastrado Anteriormente - Consulte-o'
+    MARK *#MATRICULA-CADASTRADO ALARM
+END-IF
+SENHA-VIEW.SEN-MATRICULA       := #MATRICULA-CADASTRADO
+SENHA-VIEW.SEN-NOME            := #NOME-CADASTRADO
+SENHA-VIEW.SEN-SENHA           := #SENHA-CADASTRADO
+SENHA-VIEW.SEN-NIVEL           := #OPCAO
+IF #MATRICULA-CADASTROU = 7002271 
+  SENHA-VIEW.SEN-MAT-ATUALIZADOR := 34165 
+ELSE 
+  SENHA-VIEW.SEN-MAT-ATUALIZADOR := #MATRICULA-CADASTROU 
+END-IF 
+SENHA-VIEW.SEN-DATA-PROC       := #DATA
+SENHA-VIEW.SEN-HORA-PROC       := #HORAS
+STORE SENHA-VIEW
+INPUT NO ERASE ALARM 18/29
+  'Confirmacao..(S/N).:'(I) #CONF(AD=AIL'_')
+IF #CONF = ' '
+  REINPUT 'Confirme "S" ou "N"' ALARM
+END-IF
+IF NOT (#CONF = 'S' OR = 'N')
+  REINPUT 'Confirmacao invalida' MARK *#CONF ALARM
+END-IF
+IF #CONF = 'N'
+  BACKOUT TRANSACTION
+  FETCH 'SCRP1510'        /* GORETE
+ELSE
+  END TRANSACTION
+  INPUT NO ERASE ALARM 19/20
+    'INCLUSAO EFETUADA COM SUCESSO - TECLE <ENTER>'(I)
+  FETCH 'SCRP1510'
+END-IF
+INCLUDE SCRCERRO
+END

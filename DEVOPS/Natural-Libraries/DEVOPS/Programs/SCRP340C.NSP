@@ -1,0 +1,336 @@
+* >Natural Source Header 000000
+* :Mode S
+* :CP
+* :LineIncrement 10
+* <Natural Source Header
+************************************************************************
+* PROGRAMA : SCRP3400                                                  *
+* OBJETIVO : CONSULTA EMISSOES DE ATESTADOS DE ANTECEDENTES            *
+*            POR PERIODO, FINALIDADE E/OU POSTO                  *
+* ANALISTA : MARIA GORETE DE MEDEIROS S CRUZ                           *
+* DATA     : MODIFICADO OUTUBRO/2000                                   *
+************************************************************************
+DEFINE DATA
+GLOBAL USING SCRG001
+LOCAL  USING VWDIDEMI
+LOCAL  USING SISLDAT8
+LOCAL  USING SISLCT01
+LOCAL
+1 #I           (N04)
+1 #OPC         (A01/1:2)
+1 #NUMDOC      (A11/1:15)
+1 #UFCONS      (A20/1:15)
+1 #POSTO       (A4/1:15)
+1 MATRICULA    (A7/1:15)
+1 FINALIDADE   (A16/1:15)
+1 #FINALIDADE  (N02)
+1 #NOME        (A60)
+1 #FONETO-NOME-DADO (A06)
+1 #FONETO-MAE-DADO (A06)
+1 #NOMEIDE     (A60/1:15)
+1 #MAE         (A60)
+1 MAE          (A60/1:15)
+1 DATEMI       (A10/1:15)
+1 HOREMI       (A08/1:15)
+1 #DATEMI      (N08)
+1 #DATAINICIO  (N08)
+1 #USUARIO     (N04)
+1 #SAIDA       (A01)
+1 #ERRO        (L)
+1 #IMP         (A08)
+1 PROGRAM      (A8) INIT <*PROGRAM>
+1 DTINICIO     (A8)
+1 REDEFINE DTINICIO
+  2 DT1        (N8)
+1 DTFINAL      (A8)
+1 REDEFINE DTFINAL
+  2 DT2        (N8)
+1 #CONT        (N4)
+1 #HORAI       (N06)
+1 REDEFINE #HORAI
+  2 #HH        (N02)
+  2 #MM        (N02)
+  2 #SS        (N02)
+**---------------------------------------
+1 ESTOURO   (N02)
+1 #MSGCRIM   (A60)
+1 #EXISTE-SEC          (A01)
+1 #NUMERO2             (N05)
+1 #SEMELHANTE          (A01)
+1 #J2                  (N02)
+1 #K                   (N02)
+1 #SEC                 (A06)
+1 #SEC-ANT             (A06)
+1 #AUX                 (A06)
+END-DEFINE
+*
+INCLUDE SISCPFS
+SET KEY ALL
+FORMAT LS=150
+RP0. REPEAT
+  RESET MAE(*) #NOMEIDE(*)  FINALIDADE(*) #POSTO(*)
+    #NUMDOC(*) #UFCONS(*) DATEMI(*) HOREMI(*) MATRICULA(*)
+    #MAE   #NOME #SAIDA
+    move *datn to datini datfim
+      DEFINE PRINTER (EMF=1)  OUTPUT #IMP
+      FORMAT (EMF) LS=132 PS=60 SG=OFF
+      INPUT  (IP=OFF SG=OFF AD=MIL'_')
+        MARK   1 ALARM
+        01T '//'
+        05T 'SISTEMA DE INFORMACOES DE SEGURANCA PUBLICA'    2X '/'(19)
+        2X  'VER.' #VERSAO#(AD=OD EM=9.9) /
+        01T '///' 06T 'MODULO DE ESTATISTICA' 2X '/'(40)
+        2X *DATE(AD=OD)  /
+     01T '////' 07T 'CONSULTA EMISSAO ATESTADOS ANTECEDENTES' 2X '/'(21)
+        2X *TIMX(AD=OD)  /////
+        11T 'DATA INICIO :' DDT  '/' MDT '/' ADT //
+        13T 'DATA FIM    :' DFI  '/' MFI '/' AFI //
+*       15T 'HORA INICIO :' #HH ':' #MM
+        15T 'FINALIDADE:' #FINALIDADE (HE='SCRHFIM')
+        5X 'POSTO   :' #USUARIO             //
+        17T 'IMPRESSORA/TELA/QUANTIDADE (I/T/Q):' #SAIDA            //
+    19T 'MATRICULA  :' #MATRICULA# '  SENHA:' #SENHA# (AD=ANL)  //////
+        30T #EMPRESA#(AD=OIL) ' - ' *PROGRAM /
+    01T 'PF3 -' 01X 'Retorna' (AD=I)
+      IF *PF-KEY EQ 'PF3'
+        FETCH 'SCRP3000'
+      END-IF
+      IF *PF-KEY NE 'ENTR'
+        REINPUT *13 ALARM
+      END-IF
+      IF DATINI NE MASK(YYYYMMDD)
+        REINPUT 'DATA INVALIDA'MARK 1 ALARM
+      END-IF
+      IF DATFIM  NE MASK(YYYYMMDD)
+        REINPUT 'DATA INVALIDA'MARK 4 ALARM
+      END-IF
+      IF DATINI GT DATFIM
+        REINPUT 'PERIODO INVALIDO' MARK 1 ALARM
+      END-IF
+      DTINI := DATINI
+      PERFORM SISSD002 DTINI
+      DTFIM := DATFIM
+      PERFORM SISSD002 DTFIM
+      IF NOT(#FINALIDADE = 0 THRU 11)
+        REINPUT 'FINALIDADE INVALIDA' MARK *#FINALIDADE ALARM
+      END-IF
+  IF NOT(#SAIDA = 'I' OR = 'T' OR = 'Q')
+    REINPUT 'OPCAO INVALIDA' MARK *#SAIDA ALARM
+  END-IF
+  IF #SAIDA = 'I'
+    PERFORM PEDE-IMPRESSORA
+    FETCH 'IMP2' DATINI DATFIM #USUARIO #IMP #NOME #MAE #FINALIDADE
+      #FONETO-NOME-DADO #FONETO-MAE-DADO
+  ELSE
+    SET KEY PF1='%W>' PF2='%W<'
+    PERFORM DETALHE
+  END-IF
+*************************
+  DEFINE SUBROUTINE DETALHE
+*************************
+  RESET #I #CONT
+**-------PESQUISA POR PERIODO, POSTO   E FINALIDADE-------**
+    IF #USUARIO NE 0
+      RESET ESTOURO
+      RD2. READ DID-EMISSAO-VIEW BY DIDEMI-DATEMI
+          STARTING FROM DATINI THRU DATFIM
+          WHERE DIDEMI-POSTO  EQ #USUARIO
+          AND DIDEMI-FINALIDADE EQ #FINALIDADE
+        ADD 1 TO ESTOURO
+        IF ESTOURO = 50
+           SET CONTROL 'N'
+           INPUT NO ERASE WITH TEXT 'AGUARDE...PROCESSANDO' 05/01 ' '
+          RESET ESTOURO
+        END-IF
+        ACCEPT IF DIDEMI-FINALIDADE EQ #FINALIDADE OR #FINALIDADE = 0
+*       ACCEPT IF DIDEMI-HOREMI GE #HORAI
+*             AND DIDEMI-TIPREG EQ 2
+        AT END OF DATA
+          IF #I > 0  AND #SAIDA = 'T'
+            SET CONTROL 'WB'
+            INPUT USING MAP 'MAP15'
+            RESET #I FINALIDADE(*) DATEMI(*) #NUMDOC(*) #POSTO(*)
+              HOREMI(*) MATRICULA(*) #UFCONS(*) #NOMEIDE(*) MAE(*)
+            IF *PF-KEY = 'PF3'
+              SET CONTROL 'WB'
+              ESCAPE BOTTOM(RD2.)
+            END-IF
+          END-IF
+        END-ENDDATA
+        ADD 1 TO #I
+        ADD 1 TO #CONT
+        ADD 1 TO ESTOURO
+        IF ESTOURO = 50
+           SET CONTROL 'N'
+           INPUT NO ERASE WITH TEXT 'AGUARDE...PROCESSANDO' 05/01 ' '
+          RESET ESTOURO
+        END-IF
+        IF #SAIDA = 'T'
+          PERFORM DADOS
+          IF #I > 14
+            SET CONTROL 'WB'
+            INPUT USING MAP 'MAP15'
+            RESET #I FINALIDADE(*) DATEMI(*) #NUMDOC(*) #POSTO(*)
+              HOREMI(*) MATRICULA(*) #UFCONS(*) #NOMEIDE(*) MAE(*)
+            IF *PF-KEY = 'PF3'
+              SET CONTROL 'WB'
+              ESCAPE BOTTOM(RD2.)
+            END-IF
+          END-IF
+        END-IF
+      END-READ
+      IF #CONT = 0
+        REINPUT 'NENHUM ATESTADO ENCONTRADO' ALARM
+      ELSE
+        IF #SAIDA = 'Q'
+          SET CONTROL 'WC05L35B10/40F'
+          INPUT (SG=OFF IP=OFF) ALARM
+            /   02T 'QUANTIDADE ATESTADOS: ' #CONT(AD=OIL)
+         IF NOT(*PF-KEY = 'PF3' OR = 'ENTR')
+            REINPUT 'TECLA DE FUNCAO INVALIDA'
+          ELSE
+            SET CONTROL 'WB'
+          END-IF
+          IF *PF-KEY = 'PF3'
+            FETCH 'SCRP3200'
+          END-IF
+        END-IF
+      END-IF
+*    ESCAPE ROUTINE IMMEDIATE
+    ELSE
+* - - - - - PESQUISA PARA TODOS OS USUARIOS - - - - - - - -
+      RESET ESTOURO
+      RD3. READ DID-EMISSAO-VIEW BY DIDEMI-DATEMI
+          STARTING FROM DATINI THRU DATFIM
+        ADD 1 TO ESTOURO
+        IF ESTOURO = 50
+           SET CONTROL 'N'
+           INPUT NO ERASE WITH TEXT 'AGUARDE...PROCESSANDO' 05/01 ' '
+          RESET ESTOURO
+        END-IF
+*       ACCEPT IF DIDEMI-HOREMI GE #HORAI
+        ACCEPT IF DIDEMI-FINALIDADE EQ #FINALIDADE OR #FINALIDADE = 0
+*         WHERE  DIDEMI-FINALIDADE EQ #FINALIDADE
+*         WHERE DIDEMI-TIPREG EQ 2
+        AT END OF DATA
+          IF #I > 0  AND #SAIDA = 'T'
+            SET CONTROL 'WB'
+            INPUT USING MAP 'MAP15'
+            RESET #I FINALIDADE(*) DATEMI(*) #NUMDOC(*) #POSTO(*)
+              HOREMI(*) MATRICULA(*) #UFCONS(*) #NOMEIDE(*) MAE(*)
+            IF *PF-KEY = 'PF3'
+              SET CONTROL 'WB'
+              ESCAPE BOTTOM(RD3.)
+            END-IF
+          END-IF
+        END-ENDDATA
+        ADD 1 TO #I
+        ADD 1 TO #CONT
+        IF #SAIDA = 'T'
+          PERFORM DADOS
+          IF #I > 14
+            SET CONTROL 'WB'
+            INPUT USING MAP 'MAP15'
+            RESET #I FINALIDADE(*) DATEMI(*) #NUMDOC(*) #POSTO(*)
+              HOREMI(*) MATRICULA(*) #UFCONS(*) #NOMEIDE(*) MAE(*)
+            IF *PF-KEY = 'PF3'
+              SET CONTROL 'WB'
+              ESCAPE BOTTOM(RD3.)
+            END-IF
+          END-IF
+        END-IF
+      END-READ
+      IF #CONT = 0
+*       REINPUT 'NENHUM ATESTADO ENCONTRADO' ALARM
+          SET CONTROL 'WC05L35B10/40F'
+          INPUT (SG=OFF IP=OFF) ALARM
+            /   02T 'QUANTIDADE ATESTADOS: ' #CONT(AD=OIL)
+          IF NOT (*PF-KEY = 'PF3' OR = 'ENTR')
+             REINPUT 'TECLA DE FUNCAO INVALIDA'
+          ELSE
+             SET CONTROL 'WB'
+          END-IF
+      ELSE IF #SAIDA = 'Q'
+          SET CONTROL 'WC05L35B10/40F'
+          INPUT (SG=OFF IP=OFF) ALARM
+            /   02T 'QUANTIDADE ATESTADOS: ' #CONT(AD=OIL)
+          IF NOT (*PF-KEY = 'PF3' OR = 'ENTR')
+             REINPUT 'TECLA DE FUNCAO INVALIDA'
+          ELSE
+             SET CONTROL 'WB'
+          END-IF
+        END-IF
+        IF *PF-KEY = 'PF3'
+          FETCH 'SCRP3200'
+        END-IF
+      END-IF
+      ESCAPE ROUTINE IMMEDIATE
+    END-IF
+  END-SUBROUTINE
+*********************************
+  DEFINE SUBROUTINE PEDE-IMPRESSORA
+*********************************
+  SET CONTROL 'WC07L28FNB12/35'
+  INPUT WITH TEXT 'INFORME IMPRESSORA.' ALARM
+    2/2 'IMPRESSORA:' #IMP (AD=MIT'_')
+    4/2 'PF3 - RETORNA.'
+  IF #IMP = ' ' AND *PF-KEY = 'ENTR'
+    REINPUT 'Informe impressora.' MARK *#IMP ALARM
+  END-IF
+  IF NOT (*PF-KEY = 'PF3' OR = 'ENTR')
+    REINPUT 'Tecla de funcao invalida' MARK *#IMP ALARM
+  ELSE
+    SET CONTROL 'WB'
+  END-IF
+  IF *PF-KEY = 'PF3'
+    FETCH 'SCRP3200'
+  END-IF
+  SET CONTROL 'WB'
+** CC  DEFINE PRINTER (EMF=1) OUTPUT #IMP
+*   FORMAT (EMF) LS=80 PS=34 SG=OFF
+** CC  EJECT OFF (EMF)
+**  FETCH 'SCRPP001'
+  END-SUBROUTINE
+***********************
+  DEFINE SUBROUTINE DADOS
+***********************
+  DECIDE ON FIRST VALUE OF DIDEMI-FINALIDADE
+    VALUE 1
+      MOVE 'FINS DE TRABALHO' TO FINALIDADE(#I)
+    VALUE 2
+      MOVE 'COMPRA DE ARMA'   TO FINALIDADE(#I)
+    VALUE 3
+      MOVE 'REG. DE ARMA'     TO FINALIDADE(#I)
+    VALUE 4
+      MOVE 'PORTE DE ARMA'    TO FINALIDADE(#I)
+    VALUE 5
+      MOVE 'FINS CIVIS'      TO FINALIDADE(#I)
+    VALUE 6
+      MOVE 'OFICIO'      TO FINALIDADE(#I)
+    VALUE 7
+      MOVE 'FAX'      TO FINALIDADE(#I)
+    VALUE 8
+      MOVE 'CERT. CRIMINAIS'      TO FINALIDADE(#I)
+    VALUE 9
+      MOVE 'CANC. DE NOTA' TO FINALIDADE(#I)
+    VALUE 10
+      MOVE 'CART. FUNCIONAL' TO FINALIDADE(#I)
+    VALUE 11
+      MOVE 'IDENT. CRIMINAL' TO FINALIDADE(#I)
+    NONE VALUE
+      IGNORE
+  END-DECIDE
+  #DATEMI  := DIDEMI-DATEMI
+  PERFORM SISSD002 #DATEMI
+  MOVE EDITED #DATEMI       (EM=99/99/9999)  TO DATEMI(#I)
+  MOVE EDITED DIDEMI-REGGER (EM=ZZZZZZZZZZZ) TO #NUMDOC(#I)
+  MOVE EDITED DIDEMI-POSTO  (EM=9999)        TO #POSTO(#I)
+  MOVE EDITED DIDEMI-HOREMI (EM=99:99:99)    TO HOREMI(#I)
+  MOVE EDITED DIDEMI-MATFUN (EM=9999999)     TO MATRICULA(#I)
+  MOVE        DIDEMI-UFCONS                  TO #UFCONS(#I)
+  MOVE        DIDEMI-NOMIDE                  TO #NOMEIDE(#I)
+  MOVE        DIDEMI-MAEIDE                  TO MAE(#I)
+  END-SUBROUTINE
+**************************
+END-REPEAT
+END

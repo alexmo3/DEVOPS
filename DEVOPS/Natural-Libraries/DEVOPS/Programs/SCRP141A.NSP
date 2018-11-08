@@ -1,0 +1,118 @@
+* >Natural Source Header 000000
+* :Mode S
+* :CP
+* :LineIncrement 10
+* <Natural Source Header
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+* SISTEMA    : Sistema de Identificacao Criminal             *
+* PROGRAMA   : SCRP001                                       *
+* O QUE FAZ  ? Relatorio da Ficha Indice Criminal            *
+* Autor      : Jose Antonio Coelho                           *
+* Data       : 11 de Setembro de 1997                        *
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+DEFINE DATA
+GLOBAL USING SCRG001
+LOCAL USING SCRLCRIM
+LOCAL USING SCRLSENH
+LOCAL
+* ------------------------------------
+1 #DATA-INI       (N08)
+1 REDEFINE #DATA-INI
+  2 #ANO-INI      (N04)
+  2 #MES-INI      (N02)
+  2 #DIA-INI      (N02)
+1 #DATA-FIM       (N08)
+1 REDEFINE #DATA-FIM
+  2 #ANO-FIM      (N04)
+  2 #MES-FIM      (N02)
+  2 #DIA-FIM      (N02)
+1 #REG_GERAL     (N11)
+1 #NOME-COMPLETO (A60)
+1 #MAE           (A60)
+1 #DATA_NASC     (N08)
+1 REDEFINE  #DATA_NASC
+  2 ANAS (A04)
+  2 MNAS (A02)
+  2 DNAS (A02)
+1 DEDOS (A07/1:5,1:2)
+1 #DELEGACIA (A30)
+1 #DESC-MUNICIPIO (A30)
+1 #MUNICIPIO(N04)
+1 #UF-REG-GERAL (A02)
+1 #DATA-REGISTRO (N08)
+1 REDEFINE  #DATA-REGISTRO
+  2 #ANO-REG (N04)
+  2 #MES-REG (N02)
+  2 #DIA-REG (N02)
+1 #PAI (A60)
+1 #ALCUNHA (A30)
+1 #NOME-ANTERIOR (A60)
+1 #COD-MUN-NASCIMENTO (N04)
+1 #UF-NASCIMENTO (A02)
+1 #NATURAL      (A30)
+* -------------------------
+1 #OCORRENCIA     (N03)
+1 #OBSERVACOES    (A77/1:4)
+* -------------------------
+1 #MATRICULA (N07)
+1 #NOME-DIGITADOR (A30)
+1 #DATA-DIG (N08)
+1 REDEFINE #DATA-DIG
+  2 #ANO-DIG (N04)
+  2 #MES-DIG (N02)
+  2 #DIA-DIG (N02)
+1 #HORARIO   (N08)
+1 #FICHA1    (N11)
+1 #FICHA2    (N11)
+1 #MENSAGEM  (A70)
+1 #ALARM     (N02)
+END-DEFINE
+*
+FORMAT (1) PS=60 LS=80
+#FUNCAO#   := 'Consulta'
+#PROGRAMA# := *PROGRAM
+SET KEY ALL
+  INPUT #DATA-INI
+  FD33. FIND CRIMINAL-VIEW WITH DATDOC-ATU = #DATA-INI
+SORTED REGISTRO-ESTADUAL-GERAL
+        WHERE STATUS-REG NE 5
+* ------------------------- Recupera os Dados ------------------------ *
+*                                                                      *
+    #REG_GERAL     := CRIMINAL-VIEW.REGISTRO-ESTADUAL-GERAL
+    #NOME-COMPLETO := CRIMINAL-VIEW.NOME-COMPLETO
+    #MAE           := CRIMINAL-VIEW.NOME-MAE
+    #DATA_NASC     := CRIMINAL-VIEW.DATA-NASC
+    #PAI           := CRIMINAL-VIEW.NOME-PAI
+    #ALCUNHA       := CRIMINAL-VIEW.APELIDO-ALCUNHAS
+    #NATURAL       := CRIMINAL-VIEW.NATURALIDADE
+    #COD-MUN-NASCIMENTO :=  CRIMINAL-VIEW.COD-MUNICIPIO-NASCIMENTO
+    #UF-NASCIMENTO :=   CRIMINAL-VIEW.UF-NATURALIDADE
+    #OCORRENCIA := 1
+    #OBSERVACOES(1:4) :=   CRIMINAL-VIEW.OBS(1:4)
+    #DATA-DIG         := CRIMINAL-VIEW.DATDOC-ATU
+    #MATRICULA        := CRIMINAL-VIEW.MATFUNC-ATU
+    #HORARIO          := CRIMINAL-VIEW.HORA-ATU
+    MOVE #DATA-DIG TO #DATA-INI
+    FD2. FIND (1) SENHA-VIEW WITH SEN-MATRICULA = #MATRICULA
+      MOVE SEN-NOME TO #NOME-DIGITADOR
+    END-FIND
+    INPUT USING MAP  'SCRM111A'
+    IF NOT (*PF-KEY = 'PF3' OR = 'ENTR')
+       REINPUT 'Tecla invalida' ALARM
+    END-IF
+    IF *PF-KEY = 'PF3'
+       FETCH 'SCRP1400'
+    END-IF
+    AT END OF DATA
+       FETCH 'SCRP1400'
+    END-ENDDATA
+END-FIND
+IF *COUNTER(FD33.) = 0
+  MOVE
+    '               Nenhuma Ficha Foi Cadastrada Nesse Periodo.'
+    TO #MENSAGEM
+  INPUT USING MAP 'SCRMERRO'
+END-IF
+FETCH 'SCRP1400'
+END

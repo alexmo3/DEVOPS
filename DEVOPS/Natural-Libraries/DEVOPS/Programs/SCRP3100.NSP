@@ -1,0 +1,298 @@
+* >Natural Source Header 000000
+* :Mode S
+* :CP
+* :LineIncrement 10
+* <Natural Source Header
+************************************************************************
+* PROGRAMA : SCRP3100                                                  *
+* OBJETIVO : Consulta CADASTRADOS(Requerentes de atestados)            *
+*            por periodo(/e posto de atendimento)                      *
+* ANALISTA : MARIA GORETE DE MEDEIROS S CRUZ                           *
+* DATA     : MODIFICADO OUTUBRO/2002                                   *
+*            MIGRAÇÃO - MAR/2011 - CZ                                  *
+* -------------------------------------------------------------------- *
+* >>> ALTERACOES FEITAS POR VERONICA EM MARCO/2017                     *
+* >>  VERSAO ANTERIOR : SCRP310C                                       *
+*                                                                      *
+*    - Criacao do mapa externo XXXXXXXX para entrada de dados,         *
+*     substituindo o mapa interno anterior;                            *
+*    - Alteracao dos campos e do layout do mapa MAP15V :               *
+*      #NUMDOC (N11) --> (A20), p/tratar qualquer formato documento    *
+*      #NOMEIDE(A60) --> (A48), apenas definicao nos mapas             *
+*      #DESCRICAO(A30) -- Novo campo p/descrever funcao no cabecalho   * 
+*      ocorrencias dos arrays de 15 --> 14                             *
+*                                                                      *
+************************************************************************
+DEFINE DATA
+GLOBAL USING SCRG001
+* LOCAL  USING SCRLNOVO
+LOCAL  USING SCRLNEWV    /* VERONICA - 30.03.17
+LOCAL  USING SISLDAT8
+LOCAL  USING SISLCT01
+LOCAL
+1 #I                (N04)
+1 #OPC              (A01/1:2)
+1 #DESCRICAO-M      (A30) INIT <'CADASTRADOS'>   /* VERONICA-30.03.17 
+* 1 #NUMDOC         (A11/1:15)
+1 #NUMDOC           (A20/1:14)   /* veronica - 30.03.17
+1 #UFCONS           (A20/1:14)
+1 #POSTO            (A4/1:14)
+1 MATRICULA         (A7/1:14)
+1 FINALIDADE        (A16/1:14)
+1 #FINALIDADE       (N02)
+1 #NOME             (A60)
+1 #FONETO-NOME-DADO (A06)
+1 #FONETO-MAE-DADO  (A06)
+* 1 #NOMEIDE        (A60/1:15)
+1 #NOMEIDE          (A48/1:14)  /* veronica - 30.03.17
+1 #MAE              (A60)
+1 MAE               (A60/1:14)
+1 DATEMI            (A10/1:14)
+1 HOREMI            (A08/1:14)
+1 #DATEMI           (N08)
+1 #HORAI            (N06)
+1 REDEFINE #HORAI
+  2 #HH             (N02)
+  2 #MM             (N02)
+  2 #SS             (N02)
+1 #DATAINICIO       (N08)
+* 1 #USUARIO          (N04)
+1 #POSTO-M          (N04)   /* VERONICA 30.03.17
+1 #SAIDA            (A01)
+1 #ERRO             (L)
+1 #IMP              (A08)
+* 1 PROGRAM           (A8) INIT <*PROGRAM>
+1 #PROGRAMA         (A8) INIT <*PROGRAM>  /* VERONICA - 30.03.17
+1 DTINICIO          (A8)
+1 REDEFINE DTINICIO
+  2 DT1             (N8)
+1 DTFINAL           (A8)
+1 REDEFINE DTFINAL
+  2 DT2             (N8)
+1 #CONT             (N4)
+**
+1 ESTOURO           (N02)
+1 #MSGCRIM          (A60)
+1 #EXISTE-SEC       (A01)
+1 #NUMERO2          (N05)
+1 #SEMELHANTE       (A01)
+1 #J2               (N02)
+1 #K                (N02)
+1 #SEC              (A06)
+1 #SEC-ANT          (A06)
+1 #AUX              (A06)
+1 #CMD              (A70)
+END-DEFINE
+*
+INCLUDE SISCPFS
+SET KEY ALL
+FORMAT LS=150
+RP0. REPEAT
+  RESET MAE(*)       #NOMEIDE(*) FINALIDADE(*) #POSTO(*)
+    #NUMDOC(*)   #UFCONS(*)  DATEMI(*)     HOREMI(*)
+    MATRICULA(*) #MAE        #NOME         #SAIDA
+  DEFINE PRINTER (EMF=1)  OUTPUT 'LPT1'
+  FORMAT (EMF) LS=132 PS=60 SG=OFF
+*
+  INPUT USING MAP 'MAP14V'            /* VERONICA - 30.03.17
+* 
+  IF *PF-KEY EQ 'PF3'
+    FETCH 'SCRP3000'
+  END-IF
+  IF *PF-KEY NE 'ENTR'
+    REINPUT *13 ALARM
+  END-IF
+  IF DATINI NE MASK(YYYYMMDD)
+    REINPUT 'DATA INVALIDA'MARK 1 ALARM
+  END-IF
+  IF DATFIM  NE MASK(YYYYMMDD)
+    REINPUT 'DATA INVALIDA'MARK 4 ALARM
+  END-IF
+  IF DATINI GT DATFIM
+    REINPUT 'PERIODO INVALIDO' MARK 1 ALARM
+  END-IF
+  DTINI := DATINI
+  PERFORM SISSD002 DTINI
+  DTFIM := DATFIM
+  PERFORM SISSD002 DTFIM
+*     IF NOT(#FINALIDADE = 0 THRU 10)
+*       REINPUT 'FINALIDADE INVALIDA' MARK *#FINALIDADE ALARM
+*     END-IF
+  IF NOT(#SAIDA = 'I' OR = 'T' OR = 'Q')
+    REINPUT 'OPCAO INVALIDA' MARK *#SAIDA ALARM
+  END-IF
+  IF #SAIDA = 'I'
+    PERFORM PEDE-IMPRESSORA
+    FETCH 'IMP31V' DATINI DATFIM #HORAI #POSTO-M #IMP /* VER-31.03.17 
+  ELSE
+    SET KEY PF1='%W>' PF2='%W<'
+    PERFORM DETALHE
+  END-IF
+*************************
+  DEFINE SUBROUTINE DETALHE
+*************************
+  RESET #I #CONT
+**-------PESQUISA POR PERIODO E POSTO ---**
+  IF #POSTO-M NE 0
+    RESET ESTOURO
+    RD2. READ VW-SIC-CADNOVO BY NOVO-DATA-REG
+        STARTING FROM DATINI THRU DATFIM
+        WHERE CD-POSTO         EQ #POSTO-M
+      ACCEPT IF NOVO-HORA-ATU GE #HORAI
+      AT END OF DATA
+        IF #I > 0  AND #SAIDA = 'T'
+          SET CONTROL 'WB'
+          INPUT USING MAP 'MAP15V'
+          RESET #I FINALIDADE(*) DATEMI(*) #NUMDOC(*) #POSTO(*)
+            HOREMI(*) MATRICULA(*) #UFCONS(*) #NOMEIDE(*) MAE(*)
+          IF *PF-KEY = 'PF3'
+            SET CONTROL 'WB'
+            ESCAPE BOTTOM(RD2.)
+          END-IF
+        END-IF
+      END-ENDDATA
+      ADD 1 TO #I
+      ADD 1 TO #CONT
+      ADD 1 TO ESTOURO
+      IF ESTOURO = 50
+        SET CONTROL 'N'
+        INPUT NO ERASE WITH TEXT 'AGUARDE...PROCESSANDO' 05/01 ' '
+        RESET ESTOURO
+      END-IF
+      IF #SAIDA = 'T'
+        PERFORM DADOS
+*         IF #I > 14
+        IF #I > 13             /* VERONICA  - 30.03.17
+          SET CONTROL 'WB'
+          INPUT USING MAP 'MAP15V'
+          RESET #I FINALIDADE(*) DATEMI(*) #NUMDOC(*) #POSTO(*)
+            HOREMI(*) MATRICULA(*) #UFCONS(*) #NOMEIDE(*) MAE(*)
+          IF *PF-KEY = 'PF3'
+            SET CONTROL 'WB'
+            ESCAPE BOTTOM(RD2.)
+          END-IF
+        END-IF
+      END-IF
+    END-READ
+    IF #CONT = 0
+      REINPUT 'NENHUM ATESTADO ENCONTRADO' ALARM
+    ELSE
+      IF #SAIDA = 'Q'
+        SET CONTROL 'WC05L35B10/40F'
+        INPUT (SG=OFF IP=OFF) ALARM
+          /   02T 'QUANTIDADE ATESTADOS: ' #CONT(AD=OIL)
+        IF NOT(*PF-KEY = 'PF3' OR = 'ENTR')
+          REINPUT 'TECLA DE FUNCAO INVALIDA'
+        ELSE
+          SET CONTROL 'WB'
+        END-IF
+        IF *PF-KEY = 'PF3'
+          FETCH 'SCRP3100'
+        END-IF
+      END-IF
+    END-IF
+*    ESCAPE ROUTINE IMMEDIATE
+  ELSE
+* - - - - - PESQUISA PARA TODOS OS POSTOS     - - - - - - -
+    RESET ESTOURO
+    RD3. READ VW-SIC-CADNOVO BY NOVO-DATA-REG
+        STARTING FROM DATINI THRU DATFIM
+      ACCEPT IF NOVO-HORA-ATU GE #HORAI
+      AT END OF DATA
+        IF #I > 0  AND #SAIDA = 'T'
+          SET CONTROL 'WB'
+          INPUT USING MAP 'MAP15V'
+          RESET #I FINALIDADE(*) DATEMI(*) #NUMDOC(*) #POSTO(*)
+            HOREMI(*) MATRICULA(*) #UFCONS(*) #NOMEIDE(*) MAE(*)
+          IF *PF-KEY = 'PF3'
+            SET CONTROL 'WB'
+            ESCAPE BOTTOM(RD3.)
+          END-IF
+        END-IF
+      END-ENDDATA
+      ADD 1 TO #I
+      ADD 1 TO #CONT
+      ADD 1 TO ESTOURO
+      IF ESTOURO = 50
+        SET CONTROL 'N'
+        INPUT NO ERASE WITH TEXT 'AGUARDE...PROCESSANDO' 05/01 ' '
+        RESET ESTOURO
+      END-IF
+      IF #SAIDA = 'T'
+        PERFORM DADOS
+        IF #I > 13
+          SET CONTROL 'WB'
+          INPUT USING MAP 'MAP15V'
+          RESET #I FINALIDADE(*) DATEMI(*) #NUMDOC(*) #POSTO(*)
+            HOREMI(*) MATRICULA(*) #UFCONS(*) #NOMEIDE(*) MAE(*)
+          IF *PF-KEY = 'PF3'
+            SET CONTROL 'WB'
+            ESCAPE BOTTOM(RD3.)
+          END-IF
+        END-IF
+      END-IF
+    END-READ
+    IF #CONT = 0
+      REINPUT 'NENHUM ATESTADO ENCONTRADO' ALARM
+    ELSE IF #SAIDA = 'Q'
+        SET CONTROL 'WC05L35B10/40F'
+        INPUT (SG=OFF IP=OFF) ALARM
+          /   02T 'QUANTIDADE ATESTADOS: ' #CONT(AD=OIL)
+        IF NOT (*PF-KEY = 'PF3' OR = 'ENTR')
+          REINPUT 'TECLA DE FUNCAO INVALIDA'
+        ELSE
+          SET CONTROL 'WB'
+        END-IF
+      END-IF
+      IF *PF-KEY = 'PF3'
+        FETCH 'SCRP3100'
+      END-IF
+    END-IF
+    ESCAPE ROUTINE IMMEDIATE
+  END-IF
+  END-SUBROUTINE
+*********************************
+  DEFINE SUBROUTINE PEDE-IMPRESSORA
+*********************************
+  SET CONTROL 'WC07L28FNB12/35'
+  INPUT WITH TEXT 'INFORME IMPRESSORA.' ALARM
+    2/2 'IMPRESSORA:' #IMP (AD=MIT'_')
+    4/2 'PF3 - RETORNA.'
+  IF #IMP = ' ' AND *PF-KEY = 'ENTR'
+    REINPUT 'Informe impressora.' MARK *#IMP ALARM
+  END-IF
+  IF NOT (*PF-KEY = 'PF3' OR = 'ENTR')
+    REINPUT 'Tecla de funcao invalida' MARK *#IMP ALARM
+  ELSE
+    SET CONTROL 'WB'
+  END-IF
+  IF *PF-KEY = 'PF3'
+    FETCH 'SCRP3100'
+  END-IF
+  SET CONTROL 'WB'
+  DEFINE PRINTER (EMF=1) OUTPUT 'LPT1'
+** CC  DEFINE PRINTER (EMF=1) OUTPUT #IMP
+*   FORMAT (EMF) LS=80 PS=34 SG=OFF
+  EJECT OFF (EMF)
+**  FETCH 'SCRPP001'
+  END-SUBROUTINE
+***********************
+  DEFINE SUBROUTINE DADOS
+***********************
+  #DATEMI  := NOVO-DATA-REG
+  PERFORM SISSD002 #DATEMI
+  MOVE EDITED #DATEMI           (EM=99/99/9999)  TO DATEMI(#I)
+  IF NU-DOCUMENTO NE ' '  /* VERONICA - 30.03.17
+    MOVE NU-DOCUMENTO    TO #NUMDOC(#I)
+  ELSE
+    MOVE EDITED NOVO-REGGER    (EM=ZZZZZZZZZZZ) TO #NUMDOC(#I)
+  END-IF
+  MOVE EDITED CD-POSTO          (EM=9999)        TO #POSTO(#I)
+  MOVE EDITED NOVO-HORA-ATU     (EM=99:99:99)    TO HOREMI(#I)
+  MOVE EDITED NOVO-MATFUNC-ATU  (EM=9999999)     TO MATRICULA(#I)
+  MOVE        NOVO-UF                        TO #UFCONS(#I)
+  MOVE        NOVO-NOME-PESSOA               TO #NOMEIDE(#I)
+  MOVE        NOVO-NOME-MAE                  TO MAE(#I)
+  END-SUBROUTINE
+END-REPEAT
+END

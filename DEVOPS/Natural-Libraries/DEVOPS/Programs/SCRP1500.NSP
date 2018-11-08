@@ -1,0 +1,55 @@
+* >Natural Source Header 000000
+* :Mode S
+* :CP
+* :LineIncrement 10
+* <Natural Source Header
+* ************************************************************
+* SISTEMA    : Sistema de Identificacao Criminal             *
+* PROGRAMA   : SCRP1500                                      *
+* ANALISTA   : Veronica Leal                                 *
+* DATA       : 08 de Junho de 2017                           *
+* OBJETIVO   : MENU DE CONTROLE DE USUARIOS                  *
+* ************************************************************
+DEFINE DATA
+GLOBAL USING SCRG001
+LOCAL
+1 #EMPRESA   (A08) INIT <' CODATA '>
+1 #PROGRAM   (A08) INIT  <*PROGRAM>
+1 #MATRICULA (N07)
+1 #SENHA     (A06)
+1 #NSENH     (A06)
+1 M-OPCAO    (N01) 
+1 OPC0       (A01/1:6)
+1 #FUNC      (A10) INIT <'MENU GERAL'>
+1 #CURSOR    (N06)
+1 #FICHA     (N11)
+1 #IMP       (A08)
+END-DEFINE
+**
+INCLUDE SISCPFS
+REPEAT
+  SET CONTROL 'MB'
+  INPUT USING MAP 'SCRM1500'
+  IF *PF-KEY =  'PF3'
+    FETCH 'SCRPP001'
+  END-IF
+*
+  DECIDE ON FIRST VALUE OF M-OPCAO
+    VALUE 1
+      SET CONTROL 'WB'
+      FETCH 'SCRP1510'
+    VALUE 2
+      SET CONTROL 'WB'
+      FETCH 'SCRP1520'
+    VALUE 3
+      SET CONTROL 'WB'
+      FETCH 'SCRP1530'
+    VALUE 4
+* **      REINPUT 'Opcao nao disponivel' ALARM
+      FETCH 'SCRP1540'
+    NONE
+      REINPUT 'Opcao invalida' ALARM
+  END-DECIDE
+INCLUDE SCRCERRO
+END-REPEAT
+END

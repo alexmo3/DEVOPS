@@ -1,0 +1,160 @@
+* >Natural Source Header 000000
+* :Mode S
+* :CP
+* :LineIncrement 10
+* <Natural Source Header
+* ********************************************************** *
+* SISTEMA    : Sistema de Identificacao Criminal             *
+* PROGRAMA   : SCRP1700                                      *
+* O QUE FAZ  : EMITE RELATORIO DE ESTATISTICA CRIMINAL       *
+* AUTOR      : MARIA GORETE MEDEIROS                         *
+* DATA       : JUNHO DE 1999                                 *
+*            : MIGRAÇÃO - FEV/2011 - CZ                      *
+* ************************************************************
+DEFINE DATA
+GLOBAL USING SCRG001
+LOCAL  USING SCRLCRIM
+LOCAL  USING SISLDAT8
+LOCAL  USING SCRLSENH
+LOCAL  USING TABLELE
+LOCAL
+1 LEI        (A02)
+1 #SAIDA      (A01)
+1 #PROGRAM   (A08) INIT  <*PROGRAM>
+1 #IMP        (A08)
+**1 #OBSERVACOES (A77/1)
+**1 REDEFINE #OBSERVACOES
+**  2 LEI-ART
+* 3 #OBSERVACOES-LEI(A30)
+* 3 #OBSERVACOES-ART(A30)
+* 3 #OBSERVACOES-FIL(A17)
+**2 #OBSERVACOES-FI1(A77)
+**2 #OBSERVACOES-FI2(A77)
+**2 #OBSERVACOES-FI3(A77)
+**1 #OBSERVACOEZ    (A77/1:80)
+*
+1 #NOME-VITIMA (A60/1:4)
+1 REDEFINE #NOME-VITIMA
+  2 VIT1
+    3 #VITIMA1        (A59)
+    3 #SEXO-VITIMA1   (A01)
+  2 VIT2
+    3 #VITIMA2        (A59)
+    3 #SEXO-VITIMA2   (A01)
+  2 VIT3
+    3 #VITIMA3        (A59)
+    3 #SEXO-VITIMA3   (A01)
+  2 VIT4
+    3 #VITIMA4        (A59)
+    3 #SEXO-VITIMA4   (A01)
+1 #VITIMAZ (A60/1:80)
+1 #DESC-SEXO     (A01)
+1 #DATA-INI       (N08)
+1 REDEFINE #DATA-INI
+  2 #ANO-INI      (N04)
+  2 #MES-INI      (N02)
+  2 #DIA-INI      (N02)
+1 #DATA-FIM       (N08)
+1 REDEFINE #DATA-FIM
+  2 #ANO-FIM      (N04)
+  2 #MES-FIM      (N02)
+  2 #DIA-FIM      (N02)
+1 #DATA_NASC     (N08)
+1 REDEFINE  #DATA_NASC
+  2 ANAS (N04)
+  2 MNAS (N02)
+  2 DNAS (N02)
+1 #DELEGACIA (A30)
+1 #DESC-MUNICIPIO (A30)
+1 #MUNICIPIO(N04)
+1 #DATA-REGISTRO (N08)
+1 REDEFINE  #DATA-REGISTRO
+  2 #ANO-REG (N04)
+  2 #MES-REG (N02)
+  2 #DIA-REG (N02)
+1 #DATA-ATUACAO (N08)
+1 REDEFINE  #DATA-ATUACAO
+  2 #DIA-ATUACAO (N02)
+  2 #MES-ATUACAO (N02)
+  2 #ANO-ATUACAO (N04)
+1 #SEXO-VIEW     (N01)
+1 #SEXO          (A01)
+1 #COD-MUN-NASCIMENTO (N04)
+1 #UF-NASCIMENTO (A02)
+1 #MUN-ENDERECO (N04)
+1 #UF-ENDERECO (A02)
+* -------------------------
+1 #MATRICULA (N07)
+1 #NOME-DIGITADOR (A30)
+1 #DATA-DIG (N08)
+1 REDEFINE #DATA-DIG
+  2 #ANO-DIG (N04)
+  2 #MES-DIG (N02)
+  2 #DIA-DIG (N02)
+1 #HORARIO   (N08)
+1 #VAR       (A01)
+1 #MENSAGEM  (A70)
+1 #CV-REG-GER  (C)
+1 #FUNCAO    (A10) INIT <'Consulta'>
+1 #FUNC      (A10) INIT <'ERROS'>
+1 #CV-D         (C) INIT <(AD=IP)>
+1 #CV-M         (C) INIT <(AD=IP)>
+1 #CV-A         (C) INIT <(AD=IP)>
+* ----------------------------------
+1 #MSGCRIM   (A60)
+1 #J2                  (N02)
+1 #K                   (N02)
+1 #SEC                 (A06)
+1 #SEC-ANT             (A06)
+1 #AUX                 (A06)
+1 TAB-INI              (N03)
+1 TAB-FIM              (N03)
+END-DEFINE
+**
+SET KEY ALL
+FORMAT (1) LS=132 PS=60 SG=OFF
+INPUT USING MAP 'SCRM1710'
+IF *PF-KEY EQ 'PF3'
+  FETCH 'SCRP1000'
+END-IF
+IF *PF-KEY NE 'ENTR'
+  REINPUT *13 ALARM
+END-IF
+IF TAB-INI GT TAB-FIM
+  REINPUT 'SUPERINTENDENCIA INCIAL MAIOR QUE SUPERINTENDENCIA FINAL'
+  MARK *TAB-INI ALARM
+END-IF
+IF DATINI NE MASK(YYYYMMDD)
+  REINPUT *14 MARK 3 ALARM
+END-IF
+IF DATFIM  NE MASK(YYYYMMDD)
+  REINPUT *14 MARK 6 ALARM
+END-IF
+IF DATINI GT DATFIM
+  REINPUT *15 MARK 3 ALARM
+END-IF
+    PERFORM PEDE-IMPRESSORA
+FETCH 'SCRP1710' DATINI DATFIM TAB-INI TAB-FIM LEI #IMP
+*********************************
+DEFINE SUBROUTINE PEDE-IMPRESSORA
+*********************************
+SET CONTROL 'WC07L28FNB12/35'
+INPUT WITH TEXT 'INFORME IMPRESSORA.' ALARM
+  2/2 'IMPRESSORA:' #IMP (AD=MIT'_')
+  4/2 'PF3 - RETORNA.'
+IF #IMP = ' ' AND *PF-KEY = 'ENTR'
+  REINPUT 'Informe impressora.' MARK *#IMP ALARM
+END-IF
+IF NOT (*PF-KEY = 'PF3' OR = 'ENTR')
+  REINPUT 'Tecla de funcao invalida' MARK *#IMP ALARM
+END-IF
+IF *PF-KEY = 'PF3'
+  SET CONTROL 'WB'
+  FETCH 'SCRP1700'
+END-IF
+SET CONTROL 'WB'
+** CC DEFINE PRINTER (EMF=1) OUTPUT #IMP
+** CC DEFINE PRINTER (EMF=1) OUTPUT 'LPT1'
+** CC EJECT OFF (EMF)
+END-SUBROUTINE
+END

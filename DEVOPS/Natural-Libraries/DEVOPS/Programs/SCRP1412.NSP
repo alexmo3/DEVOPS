@@ -1,0 +1,106 @@
+* >Natural Source Header 000000
+* :Mode S
+* :CP
+* :LineIncrement 10
+* <Natural Source Header
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+* SISTEMA    : Sistema de Identificacao Criminal             *
+* PROGRAMA   : SCRP1412                                      *
+* AUTOR      : MARIA GORETE M S CRUZ                         *
+* DATA       : OUTUBRO 1999                                  *
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+DEFINE DATA
+GLOBAL USING SCRG001
+LOCAL USING SCRLSENH
+LOCAL USING TABLELE
+LOCAL
+1 #MENSAGEM  (A70)
+1 #FUNC      (A10) INIT <'ERROS'>
+1 CRIMINAL VIEW OF SIC-CADASTRO
+  2 REGISTRO-ESTADUAL-GERAL
+  2 STATUS-REG
+  2 DATA-ALTERACAO-STATUS
+1 ESTOURO         (N02)
+1 I               (N02)
+1 #OPCAO          (N02)
+1 #STATUS         (N01)
+1 #DESC-STATUS    (A17)
+1 #REG            (N18)
+1 REGISTROS       (A11/1:60)
+1 #DATA-INI       (N08)
+1 REDEFINE #DATA-INI
+  2 #ANO-INI      (N04)
+  2 #MES-INI      (N02)
+  2 #DIA-INI      (N02)
+1 #DATA-FIM       (N08)
+1 REDEFINE #DATA-FIM
+  2 #ANO-FIM      (N04)
+  2 #MES-FIM      (N02)
+  2 #DIA-FIM      (N02)
+END-DEFINE
+INPUT #DATA-INI #DATA-FIM #STATUS
+DECIDE ON FIRST VALUE OF #STATUS
+  VALUE 1
+    MOVE 'ATIVO' TO #DESC-STATUS
+  VALUE 2
+    MOVE 'EM BAIXA' TO #DESC-STATUS
+  VALUE 3
+    MOVE 'CANCELADO' TO #DESC-STATUS
+  VALUE 4
+    MOVE 'LIVR. CONDICIONAL' TO #DESC-STATUS
+  VALUE 6
+    MOVE 'EXT. PUNIBILIDADE' TO #DESC-STATUS
+  VALUE 7
+    MOVE 'MANDADOS DE PRISAO' TO #DESC-STATUS
+  NONE VALUE
+    IGNORE
+END-DECIDE
+I:=1
+**FDST.   READ CRIMINAL BY REGISTRO-ESTADUAL-GERAL WHERE
+XDST.   FIND CRIMINAL WITH
+  DATA-ALTERACAO-STATUS = #DATA-INI THRU #DATA-FIM
+    AND   STATUS-REG = #STATUS
+  MOVE EDITED REGISTRO-ESTADUAL-GERAL (EM=99999999999) TO REGISTROS(I)
+  ADD 1 TO I
+  ADD 1 TO ESTOURO
+  IF ESTOURO = 50
+    SET CONTROL 'N'
+    INPUT TEXT 'AGUARDE...PROCESSANDO' USING MAP 'SCRM1412'
+    RESET ESTOURO
+    SET CONTROL 'MB'
+  END-IF
+  SET KEY PF3='SCRP1400'
+  IF I = 61
+    I := 1
+    INPUT MAP 'SCRM1412'
+    IF #OPCAO NE 0
+      FETCH 'SCRP1413'  REGISTROS(#OPCAO)
+        #DATA-INI #DATA-FIM #STATUS
+    END-IF
+    RESET REGISTROS(*)
+* IF #IMPRIMIR = 'S'
+*   FETCH 'SCRP1610' #DATA-INI
+* END-IF
+  END-IF
+  AT END OF DATA
+    IF I GT 1
+      INPUT MAP 'SCRM1412'
+      IF #OPCAO NE 0
+        FETCH 'SCRP1413'  REGISTROS(#OPCAO)
+          #DATA-INI #DATA-FIM #STATUS
+      END-IF
+    END-IF
+    FETCH 'SCRP1400'
+  END-ENDDATA
+*       ADD 1 TO #REG
+**END-READ
+END-FIND
+IF *COUNTER(XDST.) = 0
+  MOVE
+    '               Nenhuma Ficha Foi Cadastrada Nesse Periodo.'
+    TO #MENSAGEM
+  INPUT USING MAP 'SCRMERRO'
+  FETCH 'SCRP1400'
+END-IF
+END

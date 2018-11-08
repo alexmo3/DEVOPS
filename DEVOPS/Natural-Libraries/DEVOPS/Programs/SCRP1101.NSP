@@ -1,0 +1,987 @@
+* >Natural Source Header 000000
+* :Mode S
+* :CP
+* :LineIncrement 10
+* <Natural Source Header
+* *********************************************************************
+* SISTEMA    : SISTEMA DE IDENTIFICACAO CRIMINAL                      *
+* PROGRAMA   : SCRP1101                                               *
+*              INCLUSAO DA FICHA INDICE CRIMINAL - SIMPLIFICADA       *
+* ANALISTA   : MARIA GORETE MEDEIROS                                  *
+* DATA       : ABRIL DE 1999                                          *
+* ALTERACAO  : CONSULTA HOMONIMO EM TELA REDUZIDA - GORETE - NOV/99   *
+*              DATA DE ALTERACAO DE STATUS = DATA DO SISTEMA - 02/2002*
+*              MIGRACAO FEV/2011 - CZ                                 *
+*              ROTINA FONETICA NO ELSE DO IF LOOP=1 - ABR/2011 - CZ   *
+* *********************************************************************
+DEFINE DATA
+GLOBAL USING SCRG001
+LOCAL  USING SCRLNUME
+LOCAL  USING SICSENHA
+LOCAL
+1 CRIMINAIS VIEW OF SIC-CADASTRO
+  2 NOME-COMPLETO
+  2 NOME-MAE
+** CC  2 CODIGO-FONETICO-PRINCIPAL
+** CC  2 CODIGO-FONETICO-SECUNDARIO     (1:61)
+** CC  2 CODIGO-FONETICO-PRINCIPAL-MAE
+** CC  2 CODIGO-FONETICO-SECUNDARIO-MAE (1:61)
+  2 COD-FONETICO-PRINCIPAL
+  2 COD-FONETICO-SECUNDARIO        (1:10)
+  2 COD-FONETICO-PRINCIPAL-MAE
+  2 COD-FONETICO-SECUNDARIO-MAE    (1:10)
+  2 STATUS-REG
+  2 REGISTRO-ESTADUAL-GERAL
+  2 DATA-NASC
+1 MATESP                           (N07)
+1 SENESP                           (A06)
+1 #NIVEL-AUT                       (A01)
+1 ACHOU                            (A01)
+1 OPCAO                            (N02)
+1 EXIBIDO                          (L)
+1 IND                              (N02)
+1 #DATA-ALT-STATUS                 (N08)
+1 REDEFINE #DATA-ALT-STATUS
+  2 #ANO-ALT-STATUS                (N04)
+  2 #MES-ALT-STATUS                (N02)
+  2 #DIA-ALT-STATUS                (N02)
+1 CHAVE                            (A01) INIT <'I'>
+1 DMANAS                           (A08)
+1 REDEFINE DMANAS
+  2 DNAS                           (A02)
+  2 REDEFINE DNAS
+    3 #DIAN                        (N02)
+  2 MNAS                           (A02)
+  2 REDEFINE MNAS
+    3 #MESN                        (N02)
+  2 ANAS                           (A04)
+  2 REDEFINE ANAS
+    3 #ANON                        (N04)
+1 DDDD                             (N08)
+1 REDEFINE DDDD
+ 2  DDDD-ANO                       (N04)
+ 2  DDDD-MES                       (N02)
+ 2  DDDD-DIA                       (N02)
+1 #ULT-NUM                         (N11)
+* 1 #INFRACAO                      (C) INIT <(AD=IP)>
+1 #IMP                             (A08)
+1 #DATA-AUX                        (N08)
+1 REDEFINE #DATA-AUX
+  2 #DIA-AUX                       (N02)
+  2 #MES-AUX                       (N02)
+  2 #ANO-AUX                       (N04)
+1 #DATA-INV                        (N08)
+1 REDEFINE #DATA-INV
+  2 #ANO-INV                       (N04)
+  2 #MES-INV                       (N02)
+  2 #DIA-INV                       (N02)
+1 #LISTA                           (A01)
+1 #MSGCRIM                         (A60)
+1 #EXISTE-SEC                      (A01)
+1 #NUMERO2                         (N05)
+1 #SEMELHANTE                      (A01)
+1 #J2                              (N02)
+1 #K                               (N02)
+1 #SEC                             (A06)
+1 #SEC-ANT                         (A06)
+1 #AUX                             (A06)
+1 #CHAVE-COMBINA                   (A120)
+1 REDEFINE #CHAVE-COMBINA
+  2 #VET                           (A06/1:20)
+1 #FONETO1                         (A06/1:61)
+1 #FONETO-NOME-DADO                (A06)
+1 REDEFINE #FONETO-NOME-DADO
+  2 FONETO-NOME-DADO               (B06)
+1 #FONETO-MAE-DADO                 (A06)
+1 REDEFINE #FONETO-MAE-DADO
+  2 FONETO-MAE-DADO                (B06)
+1 #INFORMACOES-GERAIS              (A97)
+1 REDEFINE #INFORMACOES-GERAIS
+  2 #NOME-DA-PESSOA                (A80)
+  2 #TAMANHO-NOME-PESSOA           (B02)
+  2 #TIPO-NOME                     (A01)
+  2 #NUMERO-COMPONENTES            (B02)
+  2 #TIPO-COMBINACAO               (A01)
+  2 #NUMERO-COMBINACOES            (B02)
+  2 #INICIO-COMBINACAO             (B02)
+  2 #CHAVE-NOME-DADO               (A06)
+  2 REDEFINE #CHAVE-NOME-DADO
+    3 CHAVE-NOME-DADO              (B06)
+  2 #FLAG                          (A01)
+**1 #FILLER                        (A100)
+1 #CHAVE-COMB-2A21                 (A240)
+1 #CHAVE-COMB-2A22                 (A030)
+1 #CHAVE-COMB-3A31                 (A240)
+1 #CHAVE-COMB-3A32                 (A240)
+1 #CHAVE-COMB-3A33                 (A240)
+1 #CHAVE-COMB-4A41                 (A240)
+1 #CHAVE-COMB-4A42                 (A240)
+1 #CHAVE-COMB-4A43                 (A240)
+1 #CHAVE-COMB-4A44                 (A240)
+1 #CHAVE-COMB-4A45                 (A240)
+1 #CHAVE-COMB-4A46                 (A240)
+**
+1 CRIMINAL-VIEW VIEW OF SIC-CADASTRO
+  2 REGISTRO-FEDERAL-CI
+  2 STATUS-REG
+  2 LEGISLACAO
+  2 TIPO-REG
+  2 REGISTRO-ESTADUAL-GERAL
+  2 NOME-COMPLETO
+  2 NOME-PAI
+  2 NOME-MAE
+  2 DATA-REG
+  2 APELIDO-ALCUNHAS
+  2 DATA-NASC
+  2 UF-REG-ESTADUAL-GERAL
+  2 MUNICIPIO-REG-GERAL
+  2 COD-MUNIC-REG-GERAL
+  2 DATA-ALTERACAO-STATUS
+  2 NOME-DELEGACIA
+  2 SEXO
+  2 NUMERO-AUTOS
+  2 DATA-ATUACAO
+  2 MATFUNC-ATU
+  2 DATDOC-ATU
+  2 HORA-ATU
+  2 NOME-VITIMA                    (1:80)
+  2 UF-CI
+  2 OBS                            (1:80)
+** CC  2 CODIGO-FONETICO-PRINCIPAL
+** CC  2 CODIGO-FONETICO-SECUNDARIO     (1:61)
+** CC  2 CODIGO-FONETICO-PRINCIPAL-MAE
+** CC  2 CODIGO-FONETICO-SECUNDARIO-MAE (1:61)
+  2 COD-FONETICO-PRINCIPAL
+  2 COD-FONETICO-SECUNDARIO        (1:10)
+  2 COD-FONETICO-PRINCIPAL-MAE
+  2 COD-FONETICO-SECUNDARIO-MAE    (1:10)
+**
+1 #TEXT                            (A50)
+1 #VARIAVEIS_DA_TELA
+  2 #FUNC                          (A10)
+  2 #CHV                           (A1)
+  2 #CHAVE                         (A1)
+  2 #ALARM                         (N2,0)
+  2 #STATUS                        (A1)
+  2 REDEFINE #STATUS
+    3 #STATUS0                     (N1)
+  2 #DESCREG                       (A45)
+  2 #DELEGACIA                     (A30)
+  2 #DESC-MUNICIPIO                (A30)
+  2 #MUNICIPIO                     (N4,0)
+  2 #UF-REG-GERAL                  (A2)
+  2 #REG_GERAL                     (N15,0)              /* n11
+  2 #DATA-REGISTRO                 (N8,0)
+  2 REDEFINE #DATA-REGISTRO
+    3 #D-REG                       (N2)
+    3 #M-REG                       (N2)
+    3 #A-REG                       (N4)
+  2 #DATA-REGISTRO0                (N8)
+  2 REDEFINE #DATA-REGISTRO0
+    3 #A-REG0                      (N4)
+    3 #M-REG0                      (N2)
+    3 #D-REG0                      (N2)
+  2 #NO-AUTOS                      (N11)
+  2 #DATA-ATUACAO                  (N8)
+  2 REDEFINE #DATA-ATUACAO
+    3 #ANO-AUTUACAO                (N4)
+    3 #MES-AUTUACAO                (N2)
+    3 #DIA-AUTUACAO                (N2)
+  2 #SUPER-ID                      (A13)               /* a11
+  2 REDEFINE #SUPER-ID
+    3 #IDENTIDADE                  (N11,0)
+    3 #UF-CI                       (A2)
+  2 #NOME-COMPLETO                 (A60)
+  2 #NOME-ANTERIOR                 (A60)
+  2 #PAI                           (A60)
+  2 #MAE                           (A60)
+  2 #ALCUNHA                       (A30)
+  2 #SEXO                          (N1,0)
+  2 #DATA_NASC                     (A8)
+  2 REDEFINE #DATA_NASC
+    3 #DIA_NASC                    (N2,0)
+    3 #MES_NASC                    (N2,0)
+    3 #ANO_NASC                    (N4,0)
+  2 #DATA_NASC0                    (A8)
+  2 REDEFINE #DATA_NASC0
+    3 #DATA_NASC00                 (N8,0)
+    3 REDEFINE #DATA_NASC00
+      4 #ANO_NASC0                 (N4,0)
+      4 #MES_NASC0                 (N2,0)
+      4 #DIA_NASC0                 (N2,0)
+  2 #NATURALIDADE                  (A35)
+  2 #COD-MUN-NASCIMENTO            (N4,0)
+  2 #UF-NASCIMENTO                 (A2)
+  2 #DOC-APRESENTADO               (A30)
+  2 #NUM-DOC-APRESENTADO           (N11)
+  2 #ORGAO-EXP-UF                  (A15)
+  2 #OCORRENCIA                    (N3,0)INIT<1>
+  2 #OBSERVACOES                   (A77/1:4)
+  2 REDEFINE #OBSERVACOES
+    3 LEI-ART
+      4 #OBSERVACOES-LEI           (A30)
+      4 #OBSERVACOES-ART           (A30)
+      4 #OBSERVACOES-FIL           (A17)
+    3 #OBSERVACOES-FI1             (A77)
+    3 #OBSERVACOES-FI2             (A77)
+    3 #OBSERVACOES-FI3             (A77)
+  2 #OBSERVACOEZ                   (A77/1:80)
+  2 #NOME-VITIMA                   (A60/1:4)
+  2 REDEFINE #NOME-VITIMA
+    3 VIT1
+      4 #VITIMA1                   (A59)
+      4 #SEXO-VITIMA1              (A1)
+    3 VIT2
+      4 #VITIMA2                   (A59)
+      4 #SEXO-VITIMA2              (A1)
+    3 VIT3
+      4 #VITIMA3                   (A59)
+      4 #SEXO-VITIMA3              (A1)
+    3 VIT4
+      4 #VITIMA4                   (A59)
+      4 #SEXO-VITIMA4              (A1)
+  2 #VITIMAZ                       (A60/1:80)
+  2 #CONF                          (A1)
+  2 #DATA_ATU                      (N8,0)
+  2 #HORA_ATU                      (N8,0)
+  2 REDEFINE #HORA_ATU
+    3 #HORA                        (N2,0)
+    3 #MIN                         (N2,0)
+    3 #SEG                         (N2,0)
+    3 #NSE                         (N2,0)
+  2 #OPERADOR                      (N7,0)
+1 #I                               (N4)
+1 #J                               (N4)
+1 #L                               (N4)
+1 #M                               (N4)
+1 #X                               (N4)
+1 #Y                               (N4)
+1 #W                               (N4)
+1 #CV-REG-GER                      (C)
+1 #CV-NOME                         (C)
+1 #CV-MAE                          (C)
+1 #CV-DATA                         (C)
+1 #CV-IDENT                        (C)
+1 #VAR                             (C)
+1 #VAR2                            (C)
+1 #CVOP                            (C)
+1 #ND                              (C)INIT<(AD=IP)>
+1 #LOOP                            (N18,0)
+1 #TEMPO                           (A10)
+1 REDEFINE #TEMPO
+  2 #TEMPOHORA                     (N2,0)
+  2 FILLER                         1X
+  2 #TEMPOMIN                      (N2,0)
+  2 FILLER                         1X
+  2 #TEMPOSEG                      (N2,0)
+  2 FILLER                         1X
+  2 #TEMPONSE                      (N1,0)
+1 #MAT                             (N7,0)
+1 #SENHA                           (A6)
+1 DEDOS                            (A7/1:5,1:2)
+1 #MAO-DIREITA                     (A35)
+1 REDEFINE #MAO-DIREITA
+  2 #DEDOD1                        (A7)
+  2 #DEDOD2                        (A7)
+  2 #DEDOD3                        (A7)
+  2 #DEDOD4                        (A7)
+  2 #DEDOD5                        (A7)
+1 #MAO-ESQUERDA                    (A35)
+1 REDEFINE #MAO-ESQUERDA
+  2 #DEDOE1                        (A7)
+  2 #DEDOE2                        (A7)
+  2 #DEDOE3                        (A7)
+  2 #DEDOE4                        (A7)
+  2 #DEDOE5                        (A7)
+**
+1 #CHAVE-FONETICA
+  2 #CONSULTA                      (L)
+  2 #TEXTO-CONSULTA                (A60)
+  2 #TEXTO-FONETICO                (A15/1:10)
+1 #CHAVE-FONETICA-MAE
+  2 #CONSULTA-MAE                  (L)
+  2 #TEXTO-CONSULTA-MAE            (A60)
+  2 #TEXTO-FONETICO-MAE            (A15/1:10)
+**
+1 #FLAG-CRIMINAL                   (N01)
+1 #nao-pode-imprimir               (A01)    /* veronica 31.05.17 
+1 #reg-criminal                    (N11)    /* veronica 31.05.17 
+*
+1 #FLAGN(N1) /* HOMONIMO INDIVIDUO
+1 #FLAGM(N1) /* HOMONIMO MAE
+END-DEFINE
+**
+#DATA-ALT-STATUS := *DATN /* MODIFICADO EM 02/02/2002 - SOL ALEXANDRE
+RESET #CONTADOR# #IDENTIDADE #uf-ci #FLAG-CRIMINAL
+FORMAT PS=23
+* INPUT (SG=OFF) N-ANO-NASC
+SET KEY ALL
+SET KEY PF10 NAMED 'CALC'
+#PROGRAMA# := *PROGRAM
+SET CONTROL 'MB'
+MOVE (AD=I) TO #VAR
+RP1. REPEAT
+  INPUT USING MAP 'SCRM1104'
+  MOVE #ANON TO DDDD-ANO
+  MOVE #MESN TO DDDD-MES
+  MOVE #DIAN TO DDDD-DIA
+  PERFORM CRIMINAL                /* ROTINA FONETICA
+  MOVE 'INCLUSAO' TO #FUNC
+  INPUT USING MAP 'SCRM1101'
+  IF #VITIMA1 EQ ' '
+     REINPUT 'Informe nome da vitima' MARK *#VITIMA1 ALARM
+  END-IF
+  PERFORM CRIMINAL
+  MOVE DMANAS TO #DATA_NASC
+  #VLT# := 1
+  #CHV  := '*'
+  MOVE (AD=IP) TO #VAR
+  IF #DATA_NASC NE ' '
+     MOVE (AD=IP) TO #CV-DATA     /* ANTES AD=I (05/06/98)
+  END-IF
+  IF #REG_GERAL NE 0
+     MOVE (AD=IP) TO #CV-REG-GER
+  END-IF
+* IF #IDENTIDADE NE 0
+  MOVE (AD=IP) TO #CV-IDENT
+* END-IF
+* IF #MAE NE '************'
+*   MOVE #MAE TO #MAE-LIMPA
+* ELSE
+*   RESET #MAE-LIMPA
+* END-IF
+  MOVE (AD=IP) TO #CV-MAE         /* ANTES AD=I (05/06/98)
+  IF #NOME-COMPLETO NE ' '
+     MOVE (AD=IP) TO #CV-NOME     /* ANTES AD=I (05/06/98)
+  END-IF
+  ADD 1 TO #LOOP
+  #OCORRENCIA := 1
+  IF CRIMINAL-VIEW.STATUS-REG = 5
+     REINPUT 'Esta ficha esta" excluida - Nao pode ser alterada' ALARM
+  END-IF
+  MOVE *DATN         TO #DATA-INV
+  MOVE #DIA-INV      TO #DIA-AUX
+  MOVE #MES-INV      TO #MES-AUX
+  MOVE #ANO-INV      TO #ANO-AUX
+  MOVE #DATA-AUX     TO #DATA-REGISTRO
+  MOVE *DATN         TO #DATA_ATU
+  MOVE *TIME         TO #TEMPO
+  MOVE #TEMPOHORA    TO #HORA
+  MOVE #TEMPOMIN     TO #MIN
+  MOVE #TEMPOSEG     TO #SEG
+  MOVE #TEMPONSE     TO #NSE
+  MOVE #DATA_NASC    TO #DATA_NASC0
+  MOVE #DIA_NASC     TO #DIA_NASC0
+  MOVE #MES_NASC     TO #MES_NASC0
+  MOVE #ANO_NASC     TO #ANO_NASC0
+  MOVE #D-REG        TO #D-REG0
+  MOVE #M-REG        TO #M-REG0
+  MOVE #A-REG        TO #A-REG0
+  IF #MAE = '*'
+     MOVE '************' TO #MAE
+  END-IF
+  IF #PAI = '*' OR = ' '
+     MOVE '************' TO #PAI
+  END-IF
+  IF #ALCUNHA     = ' ' OR = '*'
+     MOVE '************' TO #ALCUNHA
+  END-IF
+*     IF #NOME-VITIMA = '*'
+*        MOVE '************' TO #NOME-VITIMA
+*     END-IF
+  IF #DATA-ATUACAO LT 1
+     MOVE  0 TO #DATA-ATUACAO
+  END-IF
+  IF #NO-AUTOS LT 1
+     MOVE 0  TO #NO-AUTOS
+  END-IF
+  IF #NUM-DOC-APRESENTADO LT 1
+     MOVE 0 TO #NUM-DOC-APRESENTADO
+  END-IF
+  IF #COD-MUN-NASCIMENTO LT 1
+     MOVE 0 TO #COD-MUN-NASCIMENTO
+  END-IF
+  IF #UF-NASCIMENTO =  ' '
+     MOVE '**' TO #UF-NASCIMENTO
+  END-IF
+* IF #ORGAO-EXP-UF = '*' OR = ' '
+*   MOVE '************' TO #ORGAO-EXP-UF
+* END-IF
+  CRIMINAL-VIEW.REGISTRO-FEDERAL-CI      := #IDENTIDADE
+  CRIMINAL-VIEW.UF-CI                    := #UF-CI
+  CRIMINAL-VIEW.STATUS-REG               := #STATUS0
+  CRIMINAL-VIEW.DATA-ALTERACAO-STATUS    := #DATA-ALT-STATUS
+*****
+  CRIMINAL-VIEW.TIPO-REG                 := 'IN'
+*****
+  CRIMINAL-VIEW.NOME-COMPLETO            := #NOME-COMPLETO
+  CRIMINAL-VIEW.NOME-PAI                 := #PAI
+  CRIMINAL-VIEW.NOME-MAE                 := #MAE
+  CRIMINAL-VIEW.DATA-NASC                := #DATA_NASC00
+  CRIMINAL-VIEW.DATDOC-ATU               := #DATA_ATU
+  CRIMINAL-VIEW.HORA-ATU                 := #HORA_ATU
+  CRIMINAL-VIEW.MATFUNC-ATU              := #MATRICULA#
+  CRIMINAL-VIEW.NOME-DELEGACIA           := #DELEGACIA
+  CRIMINAL-VIEW.MUNICIPIO-REG-GERAL      := #DESC-MUNICIPIO
+  CRIMINAL-VIEW.COD-MUNIC-REG-GERAL      := #MUNICIPIO
+  CRIMINAL-VIEW.UF-REG-ESTADUAL-GERAL    := #UF-REG-GERAL
+  CRIMINAL-VIEW.DATA-REG                 := #DATA-REGISTRO0
+  CRIMINAL-VIEW.NUMERO-AUTOS             := #NO-AUTOS
+  CRIMINAL-VIEW.DATA-ATUACAO             := #DATA-ATUACAO
+  CRIMINAL-VIEW.APELIDO-ALCUNHAS         := #ALCUNHA
+* ------------------------------------------------ *
+  REPEAT WHILE #CHV = '*'
+    IF #OBSERVACOES(1) = ' '
+       REINPUT 'Nenhuma ocorrencia foi informada'
+       MARK *#OBSERVACOES(1) ALARM
+    ELSE
+       RESET #CHV
+    END-IF
+  END-REPEAT
+  PERFORM GRAVA-OCORRENCIAS
+  CRIMINAL-VIEW.OBS(*)                   := #OBSERVACOEZ(*)
+  CRIMINAL-VIEW.LEGISLACAO               := #OBSERVACOEZ(1)
+  CRIMINAL-VIEW.NOME-VITIMA(*)           := #VITIMAZ(*)
+**    STORE CRIMINAL-VIEW   GORETE
+*     RESET #VARIAVEIS #CHAVE
+**  END-IF
+**
+*******************
+DEFINE SUBROUTINE GRAVA-OCORRENCIAS
+*******************
+  #I := 1
+  IF #OBSERVACOES(1) NE ' '
+*   SET KEY ALL
+    IF NOT (*PF-KEY = 'PF3' OR = 'ENTR')
+      REINPUT 'Tecla invalida' ALARM
+    END-IF
+*   FOR #OCORRENCIA = 2 TO 40
+*   FOR #OCORRENCIA = 2 TO 25
+    FOR #OCORRENCIA = 2 TO 20
+      IF #OCORRENCIA = 2
+        COMPUTE #J = #OCORRENCIA
+        COMPUTE #L = #OCORRENCIA + 1
+        COMPUTE #M = #OCORRENCIA + 2
+      ELSE
+        COMPUTE #I = #M + 1
+        COMPUTE #J = #M + 2
+        COMPUTE #L = #M + 3
+        COMPUTE #M = #M + 4
+      END-IF
+      #OBSERVACOEZ(#I) := #OBSERVACOES(1)
+      #OBSERVACOEZ(#J) := #OBSERVACOES(2)
+      #OBSERVACOEZ(#L) := #OBSERVACOES(3)
+      #OBSERVACOEZ(#M) := #OBSERVACOES(4)
+      RESET #OBSERVACOES(*)
+      #VITIMAZ(#I) := #NOME-VITIMA(1)
+      #VITIMAZ(#J) := #NOME-VITIMA(2)
+      #VITIMAZ(#L) := #NOME-VITIMA(3)
+      #VITIMAZ(#M) := #NOME-VITIMA(4)
+      RESET #NOME-VITIMA(*)
+*     RESET #VITIMA1 #SEXO-VITIMA1 #VITIMA2 #SEXO-VITIMA2
+*           #VITIMA3 #SEXO-VITIMA3 #VITIMA4 #SEXO-VITIMA4
+      INPUT MAP 'SCRM1101'
+      SET KEY PF3 ENTR
+      IF NOT (*PF-KEY = 'PF3' OR = 'ENTR')
+         REINPUT 'Tecla invalida' ALARM
+      END-IF
+      IF *PF-KEY = 'PF3'
+         FETCH 'SCRP1101'
+      END-IF
+      FOR #X = 4 TO 2 STEP -1
+        IF #OBSERVACOES(#X) NE ' '
+           COMPUTE #W = #X - 1
+           FOR #Y = #W TO 1 STEP -1
+            IF #OBSERVACOES(#Y) = ' '
+               REINPUT
+               'Existe espaco nas linhas acima das que voce informou'
+               MARK *#OBSERVACOES(#Y) ALARM
+            END-IF
+           END-FOR
+        END-IF
+      END-FOR
+      IF #OBSERVACOES(1) = ' '
+         ESCAPE BOTTOM
+      END-IF
+*     IF #NOME-VITIMA(1) = ' '
+*       ESCAPE BOTTOM
+*     END-IF
+    END-FOR
+  END-IF
+END-SUBROUTINE
+**
+  SET CONTROL 'N'
+  INPUT NO ERASE ALARM 21/29
+    'CONFIRMACAO..(S/N).:'(I) #CONF(AD=AIT'_')
+  SET KEY PF3 ENTR
+  IF NOT (*PF-KEY = 'PF3' OR = 'ENTR')
+     REINPUT 'Tecla invalida' ALARM
+  END-IF
+  IF *PF-KEY = 'PF3'
+     FETCH 'SCRP1101'
+  END-IF
+  IF #CONF = ' '
+     REINPUT 'Confirme "S" ou "N"' MARK *#CONF ALARM
+  END-IF
+  IF NOT #CONF = 'S' OR = 'N'
+     REINPUT 'Confirmacao invalida' MARK *#CONF ALARM
+  END-IF
+  IF #CONF = 'N'
+     BACKOUT TRANSACTION
+     FETCH 'SCRP1101'
+  ELSE
+* ----------------------------
+    IF #LOOP = 1
+      SET CONTROL 'WC10L50B33/20F'
+      INPUT  (IP=OFF SG=OFF) ALARM
+        02/01 'INFORME: Matricula:' #MAT(AD=AIL'_')
+        'SENHA:' #SENHA(AD=TNL'_')
+        03/01 'PARA CONFIRMAR A OPERACAO TECLE ENTRA,'
+        04/01 'OU PF3 PARA SAIR'
+      IF *PF-KEY = 'PF3'
+        INPUT NO ERASE ALARM 05/03
+          'ATUALIZACAO NAO CONFIRMADA - TECLE <ENTER>'(I)
+        BACKOUT TRANSACTION
+        SET CONTROL 'WB'
+        FETCH 'SCRP1101'
+      END-IF
+      IF #MAT = 0
+        REINPUT 'Informe a matricula' MARK *#MAT   ALARM
+      END-IF
+      IF #MAT NE #MATRICULA#
+        REINPUT 'Matricula nao corresponde a matricula inicial'
+          MARK *#MAT ALARM
+      END-IF
+      FS1. FIND(1) SENHA-VIEW WITH SEN-MATRICULA EQ #MAT
+          #SENHA# := SENHA-VIEW.SENHA-DIGITADA
+      END-FIND
+      IF #SENHA = ' '
+        REINPUT 'INFORME A SENHA'     MARK *#SENHA ALARM
+      END-IF
+      IF #SENHA NE #SENHA#
+        REINPUT 'Senha nao corresponde a senha inicial'
+          MARK *#SENHA ALARM
+      END-IF
+      PERFORM GERA-NUMERO-CRIMINAL
+**
+** OBSERVACAO: REGISTRO-ESTADUAL-GERAL E' O REG. CRIMINAL
+**
+      CRIMINAL-VIEW.REGISTRO-ESTADUAL-GERAL := #ULT-NUM
+**
+  RESET #CHAVE-FONETICA
+  #CONSULTA       := FALSE
+  #TEXTO-CONSULTA := #NOME-COMPLETO
+  CALLNAT 'NATBNX22' #CHAVE-FONETICA
+**
+  CRIMINAL-VIEW.COD-FONETICO-PRINCIPAL     := #TEXTO-FONETICO(1)
+  CRIMINAL-VIEW.COD-FONETICO-SECUNDARIO(*) := #TEXTO-FONETICO(*)
+**
+  RESET #CHAVE-FONETICA-MAE
+  #CONSULTA-MAE       := FALSE
+  #TEXTO-CONSULTA-MAE := #MAE
+  CALLNAT 'NATBNX22' #CHAVE-FONETICA-MAE
+**
+  CRIMINAL-VIEW.COD-FONETICO-PRINCIPAL-MAE     := #TEXTO-FONETICO-MAE(1)
+  CRIMINAL-VIEW.COD-FONETICO-SECUNDARIO-MAE(*) := #TEXTO-FONETICO-MAE(*)
+**
+**
+      STORE CRIMINAL-VIEW
+      END TRANSACTION
+      INPUT NO ERASE ALARM
+        05/01 'REGISTRO INCLUIDO COM SUCESSO' (I)
+        06/01 'REG. CRIMINAL: '  (I) #ULT-NUM  (AD=OI)
+        07/01 'TECLE <ENTER>' (I)
+      RESET  DNAS MNAS ANAS /* DEDOS(*,*)
+        #IDENTIDADE #uf-ci /* #CRIME
+* #DATA-ALT-STATUS  #IDENTIDADE /* ALT. 02/02/2002 SOL ALEXANDRE
+      SET CONTROL 'WB'
+    ELSE
+**
+************* inserida em 06042011 cz
+  RESET #CHAVE-FONETICA
+  #CONSULTA       := FALSE
+  #TEXTO-CONSULTA := #NOME-COMPLETO
+  CALLNAT 'NATBNX22' #CHAVE-FONETICA
+**
+  CRIMINAL-VIEW.COD-FONETICO-PRINCIPAL     := #TEXTO-FONETICO(1)
+  CRIMINAL-VIEW.COD-FONETICO-SECUNDARIO(*) := #TEXTO-FONETICO(*)
+**
+  RESET #CHAVE-FONETICA-MAE
+  #CONSULTA-MAE       := FALSE
+  #TEXTO-CONSULTA-MAE := #MAE
+  CALLNAT 'NATBNX22' #CHAVE-FONETICA-MAE
+**
+  CRIMINAL-VIEW.COD-FONETICO-PRINCIPAL-MAE     := #TEXTO-FONETICO-MAE(1)
+  CRIMINAL-VIEW.COD-FONETICO-SECUNDARIO-MAE(*) := #TEXTO-FONETICO-MAE(*)
+**
+********************
+      PERFORM GERA-NUMERO-CRIMINAL
+      CRIMINAL-VIEW.REGISTRO-ESTADUAL-GERAL := #ULT-NUM
+      STORE CRIMINAL-VIEW
+      END TRANSACTION
+      SET CONTROL 'WC06L35B33/20F'
+      INPUT  (IP=OFF SG=OFF) ALARM
+        01/01 'REGISTRO INCLUIDO COM SUCESSO ()'(I)
+        02/03 'REG. CRIMINAL: ' (I)  #ULT-NUM (AD=OI)
+        03/03 'TECLE <ENTER>' (I)
+      RESET  DNAS MNAS ANAS /* DEDOS(*,*) #CRIME #IDENTIDADE
+*       #DATA-ALT-STATUS /* 02/02/2002 SOL ALEXANDRE
+      SET CONTROL 'WB'
+    END-IF
+* ----------------------------
+  END-IF
+  RESET #VARIAVEIS_DA_TELA #CHAVE #TEXT /* #CRIME
+    #IDENTIDADE #DATA-ATUACAO
+*   #DATA-ALT-STATUS
+  MOVE (AD=I) TO #CV-DATA #CV-REG-GER #CV-MAE #CV-NOME #VAR
+  INCLUDE SCRCERRO
+END-REPEAT
+**
+DEFINE SUBROUTINE GERA-NUMERO-CRIMINAL
+** FDR. READ (1) NUMERO-VIEW BY ULTIMO-NUMERO
+FIND (1) NUMERO-VIEW WITH ULTIMO-NUMERO > 0
+  #ULT-NUM := NUMERO-VIEW.ULTIMO-NUMERO
+  ADD 1 TO #ULT-NUM
+  NUMERO-VIEW.ULTIMO-NUMERO := #ULT-NUM
+  UPDATE(0642)
+  MOVE (AD=IP) TO #CV-REG-GER
+  SET CONTROL 'MB'
+END-FIND
+** END-READ
+END-SUBROUTINE
+**
+*******************************
+DEFINE SUBROUTINE ROT-FONETICA
+******************************
+MOVE +60 TO #TAMANHO-NOME-PESSOA
+MOVE 'F' TO #TIPO-NOME
+MOVE +0  TO #NUMERO-COMPONENTES
+MOVE '8' TO #TIPO-COMBINACAO
+MOVE +20 TO #NUMERO-COMBINACOES
+MOVE +0  TO #INICIO-COMBINACAO
+MOVE '0' TO #FLAG
+CALL 'PGP60RFO' #INFORMACOES-GERAIS #CHAVE-COMB-2A21 #CHAVE-COMB-2A22
+  #CHAVE-COMB-3A31 #CHAVE-COMB-3A32 #CHAVE-COMB-3A33
+  #CHAVE-COMB-4A41 #CHAVE-COMB-4A42 #CHAVE-COMB-4A43
+  #CHAVE-COMB-4A44 #CHAVE-COMB-4A45 #CHAVE-COMB-4A46
+*
+MOVE #NUMERO-COMPONENTES TO #NUMERO2
+*
+IF #NUMERO2 = 2
+  ADD 1 TO #K
+  MOVE #CHAVE-NOME-DADO TO #FONETO1 (#K)
+END-IF
+IF #NUMERO2 = 3
+  ADD 1 TO #K
+  MOVE #CHAVE-COMB-2A21 TO #CHAVE-COMBINA
+  ADD 1 TO #K
+  MOVE #VET (1)         TO #FONETO1 (#K)
+  ADD 1 TO #K
+  MOVE #VET (2)         TO #FONETO1 (#K)
+  MOVE #CHAVE-COMB-3A31 TO #CHAVE-COMBINA
+  ADD 1 TO #K
+  MOVE #VET (1)         TO #FONETO1 (#K)
+END-IF
+*
+IF #NUMERO2 = 4
+  MOVE #CHAVE-COMB-2A21 TO #CHAVE-COMBINA
+  ADD 1 TO #K
+  MOVE #VET (1)         TO #FONETO1 (#K)
+  ADD 1 TO #K
+  MOVE #VET (2)         TO #FONETO1 (#K)
+  ADD 1 TO #K
+  MOVE #VET (3)         TO #FONETO1 (#K)
+  MOVE #CHAVE-COMB-3A31 TO #CHAVE-COMBINA
+  FOR #J2 1 TO 20
+    MOVE #VET(#J2) TO #AUX
+    IF #AUX = ' '
+      ESCAPE BOTTOM
+    END-IF
+    ADD 1 TO #K
+    MOVE #VET(#J2) TO #FONETO1 (#K)
+  END-FOR
+  MOVE #CHAVE-COMB-4A41 TO #CHAVE-COMBINA
+  ADD 1 TO #K
+  MOVE #VET(1) TO #FONETO1 (#K)
+END-IF
+*
+IF #NUMERO2 GT 4
+  MOVE #CHAVE-COMB-2A21 TO #CHAVE-COMBINA
+  FOR #J2 1 TO 20
+    MOVE #VET(#J2) TO #AUX
+    IF #AUX = ' '
+      ESCAPE BOTTOM
+    END-IF
+    ADD 1 TO #K
+    MOVE #VET(#J2) TO #FONETO1 (#K)
+  END-FOR
+*
+  MOVE #CHAVE-COMB-3A31 TO #CHAVE-COMBINA
+  FOR #J2 1 TO 20
+    MOVE #VET(#J2) TO #AUX
+    IF #AUX = ' '
+      ESCAPE BOTTOM
+    END-IF
+    ADD 1 TO #K
+    MOVE #VET(#J2) TO #FONETO1 (#K)
+  END-FOR
+*
+  MOVE #CHAVE-COMB-4A41 TO #CHAVE-COMBINA
+*   MOVE 0 TO #K
+  FOR #J2 1 TO 20
+    MOVE #VET(#J2) TO #AUX
+    IF #AUX = ' '
+      ESCAPE BOTTOM
+    END-IF
+    ADD 1 TO #K
+    MOVE #VET(#J2) TO #FONETO1 (#K)
+  END-FOR
+  ADD 1 TO #K
+  MOVE #CHAVE-NOME-DADO TO #FONETO1 (#K)
+END-IF
+END-SUBROUTINE
+**
+**************************
+DEFINE SUBROUTINE CRIMINAL
+**************************
+SET KEY ALL
+SET KEY PF1='%W>'
+SET KEY PF2='%W<'
+EXIBIDO := FALSE
+RESET #INFORMACOES-GERAIS #CHAVE-COMB-2A21 #CHAVE-COMB-2A22
+  #CHAVE-COMB-3A31 #CHAVE-COMB-3A32 #CHAVE-COMB-3A33
+  #CHAVE-COMB-4A41 #CHAVE-COMB-4A42 #CHAVE-COMB-4A43
+  #CHAVE-COMB-4A44 #CHAVE-COMB-4A45 #CHAVE-COMB-4A46
+  #FONETO1(*) /* #FONETO2(*)
+  #K #EXISTE-SEC  #CHAVE-COMBINA
+**
+** CC MOVE #NOME-COMPLETO TO #NOME-DA-PESSOA
+** CC PERFORM ROT-FONETICA
+** CC MOVE #CHAVE-NOME-DADO TO #FONETO-NOME-DADO
+**
+  RESET #CHAVE-FONETICA
+  #CONSULTA       := TRUE
+  #TEXTO-CONSULTA := #NOME-COMPLETO
+  CALLNAT 'NATBNX22' #CHAVE-FONETICA
+**
+** CC CRIMINAL-VIEW.CODIGO-FONETICO-PRINCIPAL := #CHAVE-NOME-DADO
+** CC FOR #I = 1 TO 61
+** CC  CRIMINAL-VIEW.CODIGO-FONETICO-SECUNDARIO(#I) := #FONETO1(#I)
+** CC END-FOR
+********************
+RESET #INFORMACOES-GERAIS #CHAVE-COMB-2A21 #CHAVE-COMB-2A22
+  #CHAVE-COMB-3A31 #CHAVE-COMB-3A32 #CHAVE-COMB-3A33
+  #CHAVE-COMB-4A41 #CHAVE-COMB-4A42 #CHAVE-COMB-4A43
+  #CHAVE-COMB-4A44 #CHAVE-COMB-4A45 #CHAVE-COMB-4A46
+  #FONETO1(*) /* #FONETO2(*)
+  #K #EXISTE-SEC  #CHAVE-COMBINA
+**
+** CC MOVE #MAE TO #NOME-DA-PESSOA
+** CC PERFORM ROT-FONETICA
+** CC MOVE #CHAVE-NOME-DADO TO #FONETO-MAE-DADO
+**
+  RESET #CHAVE-FONETICA-MAE
+  #CONSULTA-MAE       := TRUE
+  #TEXTO-CONSULTA-MAE := #MAE
+  CALLNAT 'NATBNX22' #CHAVE-FONETICA-MAE
+**
+** CC CRIMINAL-VIEW.CODIGO-FONETICO-PRINCIPAL-MAE := #CHAVE-NOME-DADO
+** CC FOR #I = 1 TO 61
+** CC   CRIMINAL-VIEW.CODIGO-FONETICO-SECUNDARIO-MAE(#I) := #FONETO1(#I)
+** CC END-FOR
+**
+** CFIND(1) CRIMINAIS WITH (CODIGO-FONETICO-PRINCIPAL = FONETO-NOME-DADO
+** CC  AND CODIGO-FONETICO-PRINCIPAL-MAE = #FONETO-MAE-DADO)
+** CC  OR  (SUP-REG-FEDERAL-UF-CI = #SUPER-ID)
+** CC  OR  (CODIGO-FONETICO-PRINCIPAL = FONETO-NOME-DADO
+** CC  AND DATA-NASC                     = DDDD )
+** CC  OR  (DATA-NASC                         = DDDD
+** CC  AND CODIGO-FONETICO-PRINCIPAL-MAE = #FONETO-MAE-DADO)
+** CC  REJECT IF STATUS-REG EQ 5
+** CC END-FIND
+**
+**
+RESET #FLAG-CRIMINAL
+**
+FIND CRIMINAL-VIEW WITH SUP-REG-FEDERAL-UF-CI = #SUPER-ID
+                   AND  STATUS-REG NE 5
+  MOVE 1 TO #FLAG-CRIMINAL
+END-FIND
+*
+FIND CRIMINAL-VIEW WITH COD-FONETICO-SECUNDARIO
+                                     EQ #TEXTO-FONETICO(01)
+     AND COD-FONETICO-SECUNDARIO     EQ #TEXTO-FONETICO(02)
+     AND COD-FONETICO-SECUNDARIO     EQ #TEXTO-FONETICO(03)
+     AND COD-FONETICO-SECUNDARIO     EQ #TEXTO-FONETICO(04)
+     AND COD-FONETICO-SECUNDARIO     EQ #TEXTO-FONETICO(05)
+     AND COD-FONETICO-SECUNDARIO     EQ #TEXTO-FONETICO(06)
+     AND COD-FONETICO-SECUNDARIO     EQ #TEXTO-FONETICO(07)
+     AND COD-FONETICO-SECUNDARIO     EQ #TEXTO-FONETICO(08)
+     AND COD-FONETICO-SECUNDARIO     EQ #TEXTO-FONETICO(09)
+     AND COD-FONETICO-SECUNDARIO     EQ #TEXTO-FONETICO(10)
+     AND COD-FONETICO-SECUNDARIO-MAE EQ #TEXTO-FONETICO-MAE(01)
+     AND COD-FONETICO-SECUNDARIO-MAE EQ #TEXTO-FONETICO-MAE(02)
+     AND COD-FONETICO-SECUNDARIO-MAE EQ #TEXTO-FONETICO-MAE(03)
+     AND COD-FONETICO-SECUNDARIO-MAE EQ #TEXTO-FONETICO-MAE(04)
+     AND COD-FONETICO-SECUNDARIO-MAE EQ #TEXTO-FONETICO-MAE(05)
+     AND COD-FONETICO-SECUNDARIO-MAE EQ #TEXTO-FONETICO-MAE(06)
+     AND COD-FONETICO-SECUNDARIO-MAE EQ #TEXTO-FONETICO-MAE(07)
+     AND COD-FONETICO-SECUNDARIO-MAE EQ #TEXTO-FONETICO-MAE(08)
+     AND COD-FONETICO-SECUNDARIO-MAE EQ #TEXTO-FONETICO-MAE(09)
+     AND COD-FONETICO-SECUNDARIO-MAE EQ #TEXTO-FONETICO-MAE(10)
+     AND STATUS-REG NE 5
+*
+* ------ VERIFICANDO SE O NOME DO INDIVIDUO E O NOME DA MÃE SÃO
+* ------ HOMÔNIMOS.
+*
+* ------ INDIVIDUO
+*
+     RESET #FLAGN
+     FOR #I = 1 TO 10
+       IF COD-FONETICO-SECUNDARIO(#I) EQ ' '
+          ESCAPE BOTTOM
+       END-IF
+       IF COD-FONETICO-SECUNDARIO(#I) NE
+          #TEXTO-FONETICO(#I)
+          ASSIGN #FLAGN = 1
+          ESCAPE BOTTOM
+       END-IF
+     END-FOR
+* ------
+*
+* ------ MAE
+     RESET #FLAGM
+     FOR #I = 1 TO 10
+       IF COD-FONETICO-SECUNDARIO-MAE(#I) EQ ' '
+          ESCAPE BOTTOM
+       END-IF
+       IF COD-FONETICO-SECUNDARIO-MAE(#I) NE
+          #TEXTO-FONETICO-MAE(#I)
+          ASSIGN #FLAGM = 1
+          ESCAPE BOTTOM
+       END-IF
+     END-FOR
+* ------
+*
+* -- VERIFICA SE A MAE E O INDIVIDUO SÃO HOMONIMOS
+*
+     IF #FLAGM NE 1 AND #FLAGN NE 1
+        MOVE 1 TO #FLAG-CRIMINAL
+**      write 'achei homonimo1'
+**         / NOME-COMPLETO *ISN
+**         / NOME-MAE
+**         / '---'
+        ESCAPE BOTTOM
+     END-IF
+END-FIND
+**
+FIND CRIMINAL-VIEW WITH COD-FONETICO-SECUNDARIO
+                                 EQ #TEXTO-FONETICO(01)
+     AND COD-FONETICO-SECUNDARIO EQ #TEXTO-FONETICO(02)
+     AND COD-FONETICO-SECUNDARIO EQ #TEXTO-FONETICO(03)
+     AND COD-FONETICO-SECUNDARIO EQ #TEXTO-FONETICO(04)
+     AND COD-FONETICO-SECUNDARIO EQ #TEXTO-FONETICO(05)
+     AND COD-FONETICO-SECUNDARIO EQ #TEXTO-FONETICO(06)
+     AND COD-FONETICO-SECUNDARIO EQ #TEXTO-FONETICO(07)
+     AND COD-FONETICO-SECUNDARIO EQ #TEXTO-FONETICO(08)
+     AND COD-FONETICO-SECUNDARIO EQ #TEXTO-FONETICO(09)
+     AND COD-FONETICO-SECUNDARIO EQ #TEXTO-FONETICO(10)
+     AND DATA-NASC = DDDD
+     AND STATUS-REG NE 5
+*
+* ------ VERIFICANDO SE É MESMO O INDIVIDUO
+*
+     RESET #FLAGN
+     FOR #I = 1 TO 10
+       IF COD-FONETICO-SECUNDARIO(#I) EQ ' '
+          ESCAPE BOTTOM
+       END-IF
+       IF COD-FONETICO-SECUNDARIO(#I) NE #TEXTO-FONETICO(#I)
+          ASSIGN #FLAGN = 1
+          ESCAPE BOTTOM
+       END-IF
+     END-FOR
+*
+     IF #FLAGN NE 1
+        MOVE 1 TO #FLAG-CRIMINAL
+**      write 'achei homonimo2'
+**         / NOME-COMPLETO *ISN (0878)
+**         / NOME-MAE
+**         / '---'
+        ESCAPE BOTTOM
+     END-IF
+END-FIND
+**
+FIND CRIMINAL-VIEW WITH COD-FONETICO-SECUNDARIO-MAE
+                   EQ #TEXTO-FONETICO-MAE(01)
+     AND COD-FONETICO-SECUNDARIO-MAE EQ #TEXTO-FONETICO-MAE(02)
+     AND COD-FONETICO-SECUNDARIO-MAE EQ #TEXTO-FONETICO-MAE(03)
+     AND COD-FONETICO-SECUNDARIO-MAE EQ #TEXTO-FONETICO-MAE(04)
+     AND COD-FONETICO-SECUNDARIO-MAE EQ #TEXTO-FONETICO-MAE(05)
+     AND COD-FONETICO-SECUNDARIO-MAE EQ #TEXTO-FONETICO-MAE(06)
+     AND COD-FONETICO-SECUNDARIO-MAE EQ #TEXTO-FONETICO-MAE(07)
+     AND COD-FONETICO-SECUNDARIO-MAE EQ #TEXTO-FONETICO-MAE(08)
+     AND COD-FONETICO-SECUNDARIO-MAE EQ #TEXTO-FONETICO-MAE(09)
+     AND COD-FONETICO-SECUNDARIO-MAE EQ #TEXTO-FONETICO-MAE(10)
+     AND DATA-NASC = DDDD
+     AND STATUS-REG NE 5
+*
+* ------ MAE
+     RESET #FLAGM
+     FOR #I = 1 TO 10
+       IF COD-FONETICO-SECUNDARIO-MAE(#I) EQ ' '
+          ESCAPE BOTTOM
+       END-IF
+       IF COD-FONETICO-SECUNDARIO-MAE(#I) NE
+          #TEXTO-FONETICO-MAE(#I)
+          ASSIGN #FLAGM = 1
+          ESCAPE BOTTOM
+       END-IF
+     END-FOR
+* ------
+*
+     IF #FLAGM NE 1
+        MOVE 1 TO #FLAG-CRIMINAL
+**      write 'achei homonimo3'
+**         / NOME-COMPLETO  *ISN(0915)
+**         / NOME-MAE
+**         / '---'
+        ESCAPE BOTTOM
+     END-IF
+END-FIND
+**
+** CC IF *NUMBER(0913) = 0
+**
+IF #FLAG-CRIMINAL = 0
+    MOVE 'N' TO ACHOU
+    IF NOT EXIBIDO
+      INPUT WINDOW='ATESTADO' (AD=OIL'_' IP=OFF SG=OFF)
+      02/01 'NENHUM REGISTRO ENCONTRADO NO ARQUIVO CRIMINAL COM:' (AD=I)
+      03/01 'NOME: '  (AD=I)
+      03/08  #NOME-COMPLETO  (AD=I)
+      04/01 'MAE:  ' (AD=I)
+      04/08  #MAE  (AD=I)
+      MOVE TRUE TO EXIBIDO
+    END-IF
+ELSE
+** cc CALLNAT 'SCRHOM' #SUPER-ID FONETO-NOME-DADO #FONETO-MAE-DADO DDDD
+* --  CALLNAT 'SCRHOM' #SUPER-ID              #TEXTO-FONETICO(*) 
+* 
+* --> Nova rotina de Homonimos - VERONICA - 30.08.2016 
+* 
+   CALLNAT 'SCRHOMON' #SUPER-ID              #TEXTO-FONETICO(*) 
+                     #TEXTO-FONETICO-MAE(*) DDDD #PROGRAMA# 
+   #flag-criminal #nao-pode-imprimir #reg-criminal /* veronica 31.05.17 
+* <-- 
+    MOVE 'S' tO ACHOU
+END-IF
+END-SUBROUTINE
+**
+DEFINE WINDOW ESP
+  SIZE 6*52 BASE 15/25 TITLE ' INFORME SENHA ESPECIAL '
+  CONTROL WINDOW FRAMED POSITION SYMBOL LEFT
+IND := 1
+DEFINE WINDOW ATESTADO
+  SIZE 8*75 BASE 15/2 TITLE ' CONSULTA '
+  CONTROL WINDOW FRAMED POSITION SYMBOL LEFT
+  END

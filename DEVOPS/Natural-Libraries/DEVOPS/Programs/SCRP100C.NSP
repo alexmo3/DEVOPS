@@ -1,0 +1,152 @@
+* >Natural Source Header 000000
+* :Mode S
+* :CP
+* :LineIncrement 10
+* <Natural Source Header
+* ************************************************************
+* SISTEMA    : Sistema de Identificacao Criminal             *
+* PROGRAMA   : SCRP1000                                      *
+* OBJETIVO   : MENU PRINCIPAL DO SISTEMA                     *
+* ANALISTA   : SOLON MIRANDA                                 *
+* Autor      : Jose Antonio Coelho                           *
+* Data       : 28 de Novembro de 1996                        *
+* ALTERACAO  : 03/02/1998 POR SOLON MIRANDA                  *
+* ADAPTACOES PARA IPC - PB : MARIA GORETE MEDEIROS - CODATA  *
+* MIGRAÇÃO - FEV/2011 - CZ                                   *
+* ************************************************************
+DEFINE DATA
+GLOBAL USING SCRG001
+LOCAL
+1 #EMPRESA   (A08) INIT <' CODATA '>
+1 #PROGRAM   (A08) INIT  <*PROGRAM>
+1 #MATRICULA (N07)
+1 #SENHA     (A06)
+1 #NSENH     (A06)
+1 #OPC       (N01/1:4)
+1 OPC0       (A01/1:6)
+1 #FUNC      (A10) INIT <'MENU GERAL'>
+1 #CURSOR    (N06)
+1 #FICHA     (N11)
+1 #IMP       (A08)
+END-DEFINE
+**
+INCLUDE SISCPFS
+REPEAT
+  SET CONTROL 'MB'
+  INPUT USING MAP 'SCRM1000'
+  IF *PF-KEY =  'PF3'
+     FETCH 'SCRPP001'
+  END-IF
+*
+  DECIDE ON FIRST VALUE OF *CURSOR
+    VALUE 10031
+      IF #NIVEL# LT 1
+         REINPUT 'Usuario nao autorizado' ALARM
+      END-IF
+      FETCH 'SCRP1400'     /* CONSULTA
+    VALUE 12032
+      IF #NIVEL# LT 2
+         REINPUT 'Usuario nao autorizado' ALARM
+      END-IF
+*     FETCH 'SCRP110A'   /* POR GORETE
+      SET CONTROL 'WB'
+      SET CONTROL 'WC10L36B12/32F'
+      INPUT (SG=OFF IP=OFF AD=AIL' ') ALARM
+        04T 'INCLUSAO DE FICHA CRIMINAL'(I)//
+        06T 'Reduzida...==>' #OPC(1) //
+        07T 'Completa...==>' #OPC(2) //
+      IF *PF-KEY = 'PF3'
+         SET CONTROL 'WB'
+         FETCH 'SCRP1000'
+      END-IF
+      DECIDE ON FIRST VALUE OF *CURSOR
+        VALUE 3021
+          SET CONTROL 'WB'
+          FETCH 'SCRP1101'
+        VALUE 5022
+          SET CONTROL 'WB'
+          FETCH 'SCRP1100'
+        NONE
+          REINPUT 'Opcao invalida' ALARM
+      END-DECIDE
+    VALUE 14033
+      IF #NIVEL# LT 5
+         REINPUT 'Usuario nao autorizado' ALARM
+      END-IF
+*     FETCH 'SCRP120A'
+*     FETCH 'SCRP1200'   /* ALTERACAO
+      SET CONTROL 'WB'
+      SET CONTROL 'WC10L36B12/32F'
+      INPUT (SG=OFF IP=OFF AD=AIL' ') ALARM
+        04T 'ALTERACAO DE FICHA CRIMINAL'(I)//
+        06T 'Reduzida...==>' #OPC(1) //
+        07T 'Completa...==>' #OPC(2) //
+      IF *PF-KEY = 'PF3'
+        SET CONTROL 'WB'
+        FETCH 'SCRP1000'
+      END-IF
+      DECIDE ON FIRST VALUE OF *CURSOR
+        VALUE 3021
+          SET CONTROL 'WB'
+* --      IF *USER = '97VE' or = 'IPC5552'  /* Esmeraldo, Veronica 
+* --        FETCH 'SCRV1201'   /* 05.01.16 - VERONICA 
+* --     ELSE 
+            FETCH 'SCRP1201' 
+* --      END-IF 
+        VALUE 5022
+          SET CONTROL 'WB'
+          FETCH 'SCRP1200'
+        NONE
+          REINPUT 'Opcao invalida' ALARM
+      END-DECIDE
+    VALUE 16034
+      IF #NIVEL# LT 4
+        REINPUT 'USUARIO NAO AUTORIZADO' ALARM
+      END-IF
+**        FETCH 'SCRP1600'     /* RELATORIO
+      FETCH 'SCRP1700'  /* RELATORIO ESTATISTICA CRIMINAL
+    VALUE 18035
+      IF #NIVEL# LT 7
+        REINPUT 'Usuario nao autorizado' ALARM
+      END-IF
+*         FETCH 'SCRP130A'
+      FETCH 'SCRP1300'     /* DELECAO
+    VALUE 20036
+      IF #NIVEL# LT 9
+        REINPUT 'Usuario nao autorizado' ALARM
+      END-IF
+      SET CONTROL 'WB'
+      SET CONTROL 'WC12L36B12/32F'
+      INPUT (SG=OFF IP=OFF AD=AIL' ') ALARM
+        04T 'CADASTRAMENTO DE USUARIOS'(I)//
+        06T 'Inclusao...==>' #OPC(1) //
+        07T 'Alteracao..==>' #OPC(2) //
+        08T 'Consulta...==>' #OPC(3) //
+        09T 'Relatorio..==>' #OPC(4)
+      IF *PF-KEY = 'PF3'
+        SET CONTROL 'WB'
+        FETCH 'SCRP1000'
+      END-IF
+      DECIDE ON FIRST VALUE OF *CURSOR
+        VALUE 3021
+          SET CONTROL 'WB'
+          FETCH 'SCRP1510'
+        VALUE 5022
+          SET CONTROL 'WB'
+          FETCH 'SCRP1520'
+        VALUE 7023
+          SET CONTROL 'WB'
+          FETCH 'SCRP1530'
+        VALUE 9024
+          REINPUT 'Opcao nao disponivel' ALARM
+*                  FETCH 'SCRP1540'
+        NONE
+          REINPUT 'Opcao invalida' ALARM
+      END-DECIDE
+    NONE
+      REINPUT  'Posicione o cursor na posicao desejada e tecle <ENTER>'
+        ALARM
+  END-DECIDE
+  INCLUDE SCRCERRO
+END-REPEAT
+END

@@ -1,0 +1,65 @@
+* >Natural Source Header 000000
+* :Mode S
+* :CP
+* :LineIncrement 10
+* <Natural Source Header
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+* SISTEMA    : Sistema de Identificacao Criminal             *
+* PROGRAMA   : SCRP4000                                      *
+* OBJETIVO   : MENU DE ROTINAS INFOSEG                       *
+* Data       : 28 de Novembro de 1996                        *
+* ALTERACAO  : 04/02/2002 - ANALICE                          *
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+DEFINE DATA
+* -------------------------
+GLOBAL USING SCRG001
+LOCAL
+1 #EMPRESA   (A08) INIT <' CODATA '>
+1 #PROGRAM   (A08) INIT  <*PROGRAM>
+1 #MATRICULA (N07)
+1 #SENHA     (A06)
+1 #NSENH     (A06)
+1 #OPC       (N01/1:4)
+1 OPC0       (A01/1:3)
+1 #FUNC      (A10) INIT <'INFOSEG'>
+1 #CURSOR    (N06)
+1 #FICHA     (N11)
+1 #IMP       (A08)
+END-DEFINE
+INCLUDE SISCPFS
+*
+REPEAT
+  SET CONTROL 'MB'
+  INPUT USING MAP 'SCRM4000'
+  IF *PF-KEY =  'PF3'
+    FETCH 'SCRPP001'
+  END-IF
+*
+  DECIDE ON FIRST VALUE OF *CURSOR
+    VALUE 10032
+      IF #NIVEL# LT 1
+        REINPUT 'Usuario nao autorizado' ALARM
+      ELSE
+*       REINPUT 'ROTINA EM IMPLANTACAO' ALARM
+         FETCH 'SCRP4100'     /* ATUALIZACAO
+      END-IF
+    VALUE 12032
+      IF #NIVEL# LT 7
+        REINPUT 'Usuario nao autorizado' ALARM
+      ELSE
+          FETCH 'SCRP4200' /*CONSULTA
+      END-IF
+    VALUE 14032
+      IF #NIVEL# LT 4
+        REINPUT 'Usuario nao autorizado' ALARM
+      ELSE
+          FETCH 'SCRP4300' /*CONSULTA
+*         REINPUT 'ROTINA EM IMPLANTACAO' ALARM /* RELATORIOS
+      END-IF
+    NONE
+      REINPUT  'Posicione o cursor na posicao desejada e tecle <ENTER>'
+        ALARM
+  END-DECIDE
+  INCLUDE SCRCERRO
+END-REPEAT
+END

@@ -1,0 +1,129 @@
+* >Natural Source Header 000000
+* :Mode S
+* :CP
+* :LineIncrement 10
+* <Natural Source Header
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+* SISTEMA    : Sistema de Identificacao Criminal             *
+* PROGRAMA   : SCRP001                                       *
+* O QUE FAZ  ? Relatorio da Ficha Indice Criminal            *
+* Autor      : Jose Antonio Coelho                           *
+* Data       : 11 de Setembro de 1997                        *
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+* Mapa       : SCRM1110, SCRM111A, SCRMERRO                  *
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+DEFINE DATA
+GLOBAL USING SCRG001
+LOCAL USING SCRLCRIM
+LOCAL USING SCRLSENH
+LOCAL
+* ------------------------------------
+1 #DATA-INI       (N08)
+1 REDEFINE #DATA-INI
+  2 #ANO-INI      (N04)
+  2 #MES-INI      (N02)
+  2 #DIA-INI      (N02)
+1 #DATA-FIM       (N08)
+1 REDEFINE #DATA-FIM
+  2 #ANO-FIM      (N04)
+  2 #MES-FIM      (N02)
+  2 #DIA-FIM      (N02)
+1 #REG_GERAL     (N11)
+1 #NOME-COMPLETO (A60)
+1 #MAE           (A60)
+1 #DATA_NASC     (N08)
+1 REDEFINE  #DATA_NASC
+  2 ANAS (A04)
+  2 MNAS (A02)
+  2 DNAS (A02)
+1 #PAI (A60)
+1 #MAE-LIMPA (A60)
+1 #ALCUNHA (A30)
+1 #COD-MUN-NASCIMENTO (N04)
+1 #UF-NASCIMENTO (A02)
+1 #NATURAL      (A30)
+* -------------------------
+1 #OCORRENCIA     (N03)
+1 #OBSERVACOES    (A77/1:4)
+* -------------------------
+1 #MATRICULA (N07)
+1 #NOME-DIGITADOR (A30)
+1 #DATA-DIG (N08)
+1 REDEFINE #DATA-DIG
+  2 #ANO-DIG (N04)
+  2 #MES-DIG (N02)
+  2 #DIA-DIG (N02)
+1 #HORARIO   (N08)
+1 #FICHA1    (N11)
+1 #FICHA2    (N11)
+1 CHAVE      (A01) INIT <'C'>
+1 #CV-NOME   (C)
+1 #CV-MAE    (C)
+1 #VAR       (C) INIT <(AD=IP)>
+1 #MENSAGEM  (A70)
+1 #CV-REG-GER  (C)
+1 #CV-INCIDE   (C)
+1 #ALARM     (N02)
+END-DEFINE
+*
+FORMAT (1) PS=60 LS=80
+SET KEY ALL
+#PROGRAMA# := *PROGRAM
+#FUNCAO#   := 'Consulta'
+SET CONTROL 'MB'
+  INPUT USING MAP  'SCRM1110'
+  IF *PF-KEY = 'PF3'
+     FETCH 'SCRP1400'
+  END-IF
+  IF #MAE = '************'
+     RESET #MAE-LIMPA
+  ELSE
+     #MAE-LIMPA := #MAE
+  END-IF
+  IF #REG_GERAL = 0 AND #NOME-COMPLETO = ' ' AND #MAE = ' '
+                    AND #ALCUNHA = ' '
+     REINPUT 'Nenhum Campo Foi Informado - P/ Retornar tecle PF3'
+  END-IF
+  FD33. FIND CRIMINAL-VIEW
+      WITH REGISTRO-ESTADUAL-GERAL     = #REG_GERAL
+                   OR NOME-COMPLETO    = #NOME-COMPLETO
+                   OR NOME-MAE         = #MAE-LIMPA
+                   OR APELIDO-ALCUNHAS = #ALCUNHA
+                      WHERE STATUS-REG NE 5
+*                                                                      *
+* ------------------------- Recupera os Dados ------------------------ *
+*                                                                      *
+    #REG_GERAL     := CRIMINAL-VIEW.REGISTRO-ESTADUAL-GERAL
+    #NOME-COMPLETO := CRIMINAL-VIEW.NOME-COMPLETO
+    #MAE           := CRIMINAL-VIEW.NOME-MAE
+    #DATA_NASC     := CRIMINAL-VIEW.DATA-NASC
+    #PAI           := CRIMINAL-VIEW.NOME-PAI
+    #ALCUNHA       := CRIMINAL-VIEW.APELIDO-ALCUNHAS
+    #NATURAL       := CRIMINAL-VIEW.NATURALIDADE
+    #COD-MUN-NASCIMENTO :=  CRIMINAL-VIEW.COD-MUNICIPIO-NASCIMENTO
+    #UF-NASCIMENTO :=   CRIMINAL-VIEW.UF-NATURALIDADE
+    #OCORRENCIA := 1
+    #OBSERVACOES(1:4) :=   CRIMINAL-VIEW.OBS(1:4)
+    #DATA-DIG         := CRIMINAL-VIEW.DATDOC-ATU
+    #MATRICULA        := CRIMINAL-VIEW.MATFUNC-ATU
+    #HORARIO          := CRIMINAL-VIEW.HORA-ATU
+    MOVE #DATA-DIG TO #DATA-INI
+    FD2. FIND (1) SENHA-VIEW WITH SEN-MATRICULA = #MATRICULA
+      MOVE SEN-NOME TO #NOME-DIGITADOR
+    END-FIND
+    INPUT USING MAP  'SCRM111A'
+    IF *PF-KEY = 'PF3'
+       FETCH 'SCRP1400'
+    END-IF
+    AT END OF DATA
+       FETCH 'SCRP142A'
+    END-ENDDATA
+END-FIND
+IF *COUNTER(FD33.) = 0
+  MOVE
+'                   Nenhuma Ficha Criminal Foi Encontrada'
+    TO #MENSAGEM
+  INPUT USING MAP 'SCRMERRO'
+FETCH 'SCRP142A'
+END-IF
+END

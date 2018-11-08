@@ -1,0 +1,136 @@
+* >Natural Source Header 000000
+* :Mode S
+* :CP
+* :LineIncrement 10
+* <Natural Source Header
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+* SISTEMA    : Sistema de Identificacao Criminal             *
+* PROGRAMA   : SCRP1600                                      *
+* OBJETIVO   : RELATORIOS                                    *
+* ANALISTA   : SOLON MIRANDA                                 *
+* Autor      : Jose Antonio Coelho                           *
+* Data       : 02 de Setembro de 1997                        *
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+* Mapa       : SCRM1600                                      *
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+DEFINE DATA
+GLOBAL USING SCRG001
+LOCAL
+1 #OPC (A01/1:4)
+1 #IMP      (A08)
+1 #DATA-INI (N08)
+1 REDEFINE #DATA-INI
+  2 #ANO-INI (N04)
+  2 #MES-INI (N02)
+  2 #DIA-INI (N02)
+1 #DATA-FIM (N08)
+1 REDEFINE #DATA-FIM
+  2 #ANO-FIM (N04)
+  2 #MES-FIM (N02)
+  2 #DIA-FIM (N02)
+1 #DATA      (N08) INIT <*DATN>
+1 #FICHA1    (N11)
+1 #FICHA2    (N11)
+1 #FUNC      (A10)
+END-DEFINE
+SET KEY ALL
+SET CONTROL 'MB'
+*
+#FUNCAO#   := 'Relatorios'
+#PROGRAMA# := *PROGRAM
+INPUT USING MAP 'SCRM1600'
+DECIDE ON FIRST VALUE OF *CURSOR
+  VALUE 11044
+        PERFORM VERIFICA-DATA
+*       FETCH 'SCRPBATH' #DATA-INI
+        FETCH 'SCRP1610' #DATA-INI
+  VALUE 13047
+    SET CONTROL 'WC06L35B09/40F'
+    INPUT (SG=OFF IP=OFF) ALARM
+/   02T 'Numero(s) da(s) Ficha(s).:' (I) /
+    05T #FICHA1(AD=AIL'_') '`a' #FICHA2(AD=AIL'_')
+    IF NOT (*PF-KEY = 'PF3' OR = 'ENTR')
+       REINPUT 'Tecla invalida' ALARM
+    END-IF
+    IF *PF-KEY = 'PF3'
+      SET CONTROL 'WB'
+       FETCH 'SCRP1600'
+    END-IF
+    IF #FICHA1 = 0
+       REINPUT 'Informe o numero da ficha' ALARM
+    END-IF
+    IF #FICHA2 = 0
+       REINPUT 'Informe o numero da ficha' MARK *#FICHA2 ALARM
+    END-IF
+    IF #FICHA2 LT #FICHA1
+       REINPUT 'No.final e" menor que inicial'
+                                           MARK *#FICHA2 ALARM
+    END-IF
+    FETCH 'SCRP1640' #FICHA1 #FICHA2
+  VALUE 15050
+        PERFORM VERIFICA-DATA
+        FETCH 'SCRP1620' #DATA-INI
+  VALUE 17053
+    SET CONTROL 'WC06L35B09/40F'
+    INPUT (SG=OFF IP=OFF) ALARM
+/   01T 'Data Inicial...' #DIA-INI(AD=AIL'_') '/' #MES-INI(AD=AIL'_')
+    '/' #ANO-INI (AD=AIL'_')
+/   01T 'Data Final.....' #DIA-FIM(AD=AIL'_') '/' #MES-FIM(AD=AIL'_')
+    '/' #ANO-FIM (AD=AIL'_')
+    IF NOT (*PF-KEY = 'PF3' OR = 'ENTR')
+       REINPUT 'Tecla invalida' ALARM
+    END-IF
+    IF *PF-KEY = 'PF3'
+       SET CONTROL 'WB'
+       FETCH 'SCRP1600'
+    END-IF
+    IF #DIA-INI = 0 OR #MES-INI = 0 OR #ANO-INI = 0
+       REINPUT 'Data Inicial invalida' MARK *#DIA-INI ALARM
+    END-IF
+    IF #ANO-INI LT 1997
+       REINPUT 'Ano invalido' MARK *#ANO-INI ALARM
+    END-IF
+    IF #DATA-INI GT #DATA
+       REINPUT 'Data invalida' MARK *#DIA-INI ALARM
+    END-IF
+    IF #DIA-FIM = 0 OR #MES-FIM = 0 OR #ANO-FIM = 0
+       REINPUT 'Data Final invalida' MARK *#DIA-FIM ALARM
+    END-IF
+    IF #ANO-FIM LT 1997
+       REINPUT 'Ano invalido' MARK *#ANO-FIM ALARM
+    END-IF
+    IF #DATA-FIM LT #DATA-INI
+       REINPUT 'Data final invalida' MARK *#DIA-FIM ALARM
+    END-IF
+    IF #DATA-FIM GT #DATA
+       REINPUT 'Data final invalida' MARK *#DIA-FIM ALARM
+    END-IF
+       SET CONTROL 'WB'     /* POR GORETE
+        FETCH 'SCRP1630' #DATA-INI #DATA-FIM
+  NONE VALUE
+        IGNORE
+  END-DECIDE
+DEFINE SUBROUTINE VERIFICA-DATA
+    SET CONTROL 'WC06L35B09/40F'
+    INPUT (SG=OFF IP=OFF) ALARM
+     /  01T 'Informe a Data:' #DIA-INI(AD=AIL'_')
+    '/' #MES-INI(AD=AIL'_') '/' #ANO-INI (AD=AIL'_')
+     IF NOT (*PF-KEY = 'PF3' OR = 'ENTR')
+        REINPUT 'Tecla invalida' ALARM
+     END-IF
+     IF *PF-KEY = 'PF3'
+        SET CONTROL 'WB'    /*  POR GORETE
+        FETCH 'SCRP1600'
+     END-IF
+    IF #DIA-INI = 0 OR #MES-INI = 0 OR #ANO-INI = 0
+       REINPUT 'Data Inicial invalida' MARK *#DIA-INI ALARM
+    END-IF
+    IF #ANO-INI LT 1997
+       REINPUT 'Ano invalido' MARK *#ANO-INI ALARM
+    END-IF
+    IF #DATA-INI GT #DATA
+       REINPUT 'Data invalida' MARK *#DIA-INI ALARM
+    END-IF
+END-SUBROUTINE
+INCLUDE SCRCERRO
+END

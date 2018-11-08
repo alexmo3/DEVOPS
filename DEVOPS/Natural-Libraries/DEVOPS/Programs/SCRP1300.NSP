@@ -1,0 +1,529 @@
+* >Natural Source Header 000000
+* :Mode S
+* :CP
+* :LineIncrement 10
+* <Natural Source Header
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+* SISTEMA    : Sistema de Identificacao Criminal             *
+* PROGRAMA   : SCRP001                                       *
+* O QUE FAZ  ? Exclusao da Ficha Indice Criminal             *
+* Autor      : Jose Antonio Coelho                           *
+* Data       : 29 de Setembro de 1997                        *
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+DEFINE DATA
+GLOBAL USING SCRG001
+** CC LOCAL USING SCRLCRIM
+LOCAL USING SCRLCRI1
+LOCAL USING TABLELE
+LOCAL USING SCRLSENH
+LOCAL
+* ------------------------------------
+1 #EMPRESA        (A08) INIT <' CODATA '>
+1 #PROGRAM        (A08) INIT <*PROGRAM>
+1 #DATA-INI       (N08)
+1 REDEFINE #DATA-INI
+  2 #ANO-INI      (N04)
+  2 #MES-INI      (N02)
+  2 #DIA-INI      (N02)
+1 #DATA-FIM       (N08)
+1 REDEFINE #DATA-FIM
+  2 #ANO-FIM      (N04)
+  2 #MES-FIM      (N02)
+  2 #DIA-FIM      (N02)
+1 #REG_GERAL     (N11)
+1 #NOME-COMPLETO (A60)
+1 #MAE           (A60)
+1 #DATA_NASC     (N08)
+1 REDEFINE  #DATA_NASC
+  2 ANAS (N04)
+  2 MNAS (N02)
+  2 DNAS (N02)
+***1 DEDOS (A07/1:5,1:2)
+1 #DELEGACIA (A30)
+1 #DESC-MUNICIPIO (A30)
+1 #MUNICIPIO(N04)
+1 #UF-REG-GERAL (A02)
+1 #DATA-REGISTRO (N08)
+1 REDEFINE  #DATA-REGISTRO
+  2 #ANO-REG (N04)
+  2 #MES-REG (N02)
+  2 #DIA-REG (N02)
+1 #NO-AUTOS (N11)
+1 #DATA-ATUACAO (N08)
+1 REDEFINE  #DATA-ATUACAO
+  2 #ANO-ATUACAO (N04)
+  2 #MES-ATUACAO (N02)
+  2 #DIA-ATUACAO (N02)
+1 #IDENTIDADE (N11)
+1 #UF-CI      (A02)
+1 #PAI (A60)
+1 #MAE-LIMPA (A60)
+1 #FALECIDO  (A01)
+1 #ALCUNHA (A30)
+1 #NOME-ANTERIOR (A60)
+1 #SEXO-VIEW     (N01)
+1 #SEXO          (A01)
+1 #DESC-SEXO     (A01)
+1 #COD-MUN-NASCIMENTO (N04)
+1 #UF-NASCIMENTO (A02)
+1 #DOC-APRESENTADO (A30)
+1 #NUM-DOC-APRESENTADO (N11)
+1 #ORGAO-EXP-UF (A15)
+1 #PROFISSAO (A30)
+1 #INSTRUCAO (N01)
+1 #DESC-INSTRUCAO (A20)
+1 #NATURALIDADE (A35)
+1 #AV-RUA (A30)
+1 #NUMERO (N08)
+1 #BAIRRO (A20)
+1 #MUN-ENDERECO (N04)
+1 #UF-ENDERECO (A02)
+1 #CEP (N08)
+1 #COMPLEMENTO (A20)
+1 #STATUS (A01)
+1 #DESCREG(A45)
+1 #IMPRIMIR (A01)
+1 #VARIMP   (C) INIT <(AD=P)>
+* -------------------------
+1 #ALTURA (N01)
+1 #DESC-ALTURA  (A20)
+1 #ESTADO-CIVIL (N02)
+1 #DESC-CIVIL     (A20)
+1 #CUTIS          (N01)
+1 #DESC-CUTIS     (A20)
+1 #COR-CABELO     (N02)
+1 #DESC-COR       (A20)
+1 #TIPO-CABELO    (N01)
+1 #DESC-TIPOCABELO(A20)
+1 #COR-OLHOS      (N02)
+1 #DESC-OLHO      (A20)
+1 #SINAIS         (A60)
+1 #COMPLEICAO     (N01)
+1 #DESC-COMPLEICAO(A20)
+* 1 #VITIMAZ (A60/1:80)  /* cc
+1 #VITIMAZ (A60/1:191)
+1 #NOME-VITIMA    (A60/1:4)
+1 REDEFINE  #NOME-VITIMA
+2 VIT1
+3 #VITIMA1        (A59)
+3 #SEXO-VITIMA1   (A01)
+2 VIT2
+3 #VITIMA2        (A59)
+3 #SEXO-VITIMA2   (A01)
+2 VIT3
+3 #VITIMA3        (A59)
+3 #SEXO-VITIMA3   (A01)
+2 VIT4
+3 #VITIMA4        (A59)
+3 #SEXO-VITIMA4   (A01)
+1 #MOTIVO         (A60)
+1 #OCORRENCIA     (N03)
+* 1 #OBSERVACOEZ    (A77/1:80)  /* cc
+1 #OBSERVACOEZ    (A77/1:191)
+1 #OBSERVACOES    (A77/1:4)
+1 REDEFINE #OBSERVACOES
+2 LEI-ART
+3 #OBSERVACOES-LEI (A30)
+3 #OBSERVACOES-ART (A30)
+3 #OBSERVACOES-FIL (A17)
+2 #OBSERVACOES-FI1 (A77)
+2 #OBSERVACOES-FI2 (A77)
+2 #OBSERVACOES-FI3 (A77)
+1 #I(N4)
+1 #J(N4)
+1 #L(N4)
+1 #M(N4)
+1 #X(N4)
+1 #Y(N4)
+1 #W(N4)
+* -------------------------
+1 #MATRICULA (N07)
+1 #NOME-DIGITADOR (A30)
+1 #DATA-DIG (N08)
+1 REDEFINE #DATA-DIG
+  2 #ANO-DIG (N04)
+  2 #MES-DIG (N02)
+  2 #DIA-DIG (N02)
+1 #DATA-ALT-STATUS (N08)
+1 REDEFINE #DATA-ALT-STATUS
+  2 #ANO-ALT-STATUS (N04)
+  2 #MES-ALT-STATUS (N02)
+  2 #DIA-ALT-STATUS (N02)
+1 #HORARIO   (N08)
+1 #FICHA1    (N11)
+1 #FICHA2    (N11)
+1 #VAR       (A01)
+1 CHAVE      (A01) INIT <'C'>
+1 #MENSAGEM  (A70)
+1 #CV-REG-GER  (C)
+1 #FUNCAO    (A10) INIT <'Exclusao'>
+1 #FUNC      (A10) INIT <'Exclusao'>
+1 #MAO-DIREITA (A35)
+1 REDEFINE #MAO-DIREITA
+  2 #DEDOD1     (A07)
+  2 #DEDOD2     (A07)
+  2 #DEDOD3     (A07)
+  2 #DEDOD4     (A07)
+  2 #DEDOD5     (A07)
+1 #MAO-ESQUERDA(A35)
+1 REDEFINE #MAO-ESQUERDA
+  2 #DEDOE1     (A07)
+  2 #DEDOE2     (A07)
+  2 #DEDOE3     (A07)
+  2 #DEDOE4     (A07)
+  2 #DEDOE5     (A07)
+1 #CV-D         (C) INIT <(AD=IP)>
+1 #CV-M         (C) INIT <(AD=IP)>
+1 #CV-A         (C) INIT <(AD=IP)>
+1 #CONF         (A01)
+1 DESCEL       (A29)
+END-DEFINE
+*
+FORMAT (1) PS=60 LS=80
+SET KEY ALL
+#PROGRAMA# := *PROGRAM
+SET CONTROL 'MB'
+  INPUT USING MAP  'SCRM2000'
+  IF *PF-KEY = 'PF3'
+     FETCH 'SCRP1000'
+  END-IF
+  FIND CRIMINAL1-VIEW WITH   REGISTRO-ESTADUAL-GERAL  = #REG_GERAL
+      IF STATUS-REG EQ 5
+         REINPUT 'Ficha Criminal ja" foi Excluida anteriormente' ALARM
+      END-IF
+* ------------------------- Recupera os Dados ------------------------ *
+*                                                                      *
+    #REG_GERAL     := CRIMINAL1-VIEW.REGISTRO-ESTADUAL-GERAL
+*   DEDOS(1,1)     := CRIMINAL1-VIEW.POLDIR
+*   DEDOS(2,1)     := CRIMINAL1-VIEW.INDDIR
+*   DEDOS(3,1)     := CRIMINAL1-VIEW.MEDDIR
+*   DEDOS(4,1)     := CRIMINAL1-VIEW.ANUDIR
+*   DEDOS(5,1)     := CRIMINAL1-VIEW.MINDIR
+*   DEDOS(1,2)     := CRIMINAL1-VIEW.POLESQ
+*   DEDOS(2,2)     := CRIMINAL1-VIEW.INDESQ
+*   DEDOS(3,2)     := CRIMINAL1-VIEW.MEDESQ
+*   DEDOS(4,2)     := CRIMINAL1-VIEW.ANUESQ
+*   DEDOS(5,2)           := CRIMINAL1-VIEW.MINESQ
+    #NOME-COMPLETO       := CRIMINAL1-VIEW.NOME-COMPLETO
+    #MAE                 := CRIMINAL1-VIEW.NOME-MAE
+    #DATA_NASC           := CRIMINAL1-VIEW.DATA-NASC
+    #IDENTIDADE          := CRIMINAL1-VIEW.REGISTRO-FEDERAL-CI
+    #UF-CI               := CRIMINAL1-VIEW.UF-CI
+    #UF-REG-GERAL        := CRIMINAL1-VIEW.UF-REG-ESTADUAL-GERAL
+    #PAI                 := CRIMINAL1-VIEW.NOME-PAI
+    #DELEGACIA           := CRIMINAL1-VIEW.NOME-DELEGACIA
+    #DESC-MUNICIPIO      := CRIMINAL1-VIEW.MUNICIPIO-REG-GERAL
+    #MUNICIPIO           := CRIMINAL1-VIEW.COD-MUNIC-REG-GERAL
+    #NOME-ANTERIOR       := CRIMINAL1-VIEW.NOME-ANTERIOR
+    #ALCUNHA             := CRIMINAL1-VIEW.APELIDO-ALCUNHAS
+    #SEXO-VIEW           := CRIMINAL1-VIEW.SEXO
+    #NATURALIDADE        := CRIMINAL1-VIEW.NATURALIDADE
+    #COD-MUN-NASCIMENTO  := CRIMINAL1-VIEW.COD-MUNICIPIO-NASCIMENTO
+    #UF-NASCIMENTO       := CRIMINAL1-VIEW.UF-NATURALIDADE
+    #DOC-APRESENTADO     := CRIMINAL1-VIEW.DOCUM-APRESENTADO
+    #NUM-DOC-APRESENTADO := CRIMINAL1-VIEW.NUME-DOCUM-APRESENT
+    #ORGAO-EXP-UF        := CRIMINAL1-VIEW.ORGAO-EXP-UF
+    #STATUS              := CRIMINAL1-VIEW.STATUS-REG
+    #PROFISSAO           := CRIMINAL1-VIEW.PROFISSAO
+    #INSTRUCAO           := CRIMINAL1-VIEW.GRAU-INSTRUCAO
+    #AV-RUA              := CRIMINAL1-VIEW.AV-RUA
+    #NUMERO              := CRIMINAL1-VIEW.NUMERO
+    #BAIRRO              := CRIMINAL1-VIEW.BAIRRO
+    #MUN-ENDERECO        := CRIMINAL1-VIEW.MUNICIPIO
+    #UF-ENDERECO         := CRIMINAL1-VIEW.ESTADO
+    #CEP                 := CRIMINAL1-VIEW.CEP
+    #COMPLEMENTO         := CRIMINAL1-VIEW.COMPLEMENTO
+    #DATA-REGISTRO       := CRIMINAL1-VIEW.DATA-REG
+    #DATA-ATUACAO        := CRIMINAL1-VIEW.DATA-ATUACAO
+    #ALTURA              := CRIMINAL1-VIEW.ALTURA
+    #ESTADO-CIVIL        := CRIMINAL1-VIEW.ESTATO-CIVIL
+    #CUTIS               := CRIMINAL1-VIEW.CUTIS
+    #COR-CABELO          := CRIMINAL1-VIEW.COR-CABELOS
+    #TIPO-CABELO         := CRIMINAL1-VIEW.TIPO-CABELOS
+    #COR-OLHOS           := CRIMINAL1-VIEW.COR-OLHOS
+    #SINAIS              := CRIMINAL1-VIEW.MARCA-PART-CICAT-TATUAG
+    #COMPLEICAO          := CRIMINAL1-VIEW.COMPLEICAO
+    #NOME-VITIMA(1:4)    := CRIMINAL1-VIEW.NOME-VITIMA(1:4)
+*   #MOTIVO              := CRIMINAL1-VIEW.MOTIVO-PRISAO-LEI
+    #OCORRENCIA          := 1
+    #VITIMAZ (*)         := CRIMINAL1-VIEW.NOME-VITIMA(*)
+    move CRIMINAL1-VIEW.NOME-VITIMA(*) to #vitimaz(*)
+    #OBSERVACOES(1:4)    := CRIMINAL1-VIEW.OBS(1:4)
+    #OBSERVACOEZ(*)      := CRIMINAL1-VIEW.OBS(*)
+    #DATA-DIG            := CRIMINAL1-VIEW.DATDOC-ATU
+    #MATRICULA           := CRIMINAL1-VIEW.MATFUNC-ATU
+    #HORARIO             := CRIMINAL1-VIEW.HORA-ATU
+    MOVE #DATA-DIG TO #DATA-INI
+    FD2. FIND (1) SENHA-VIEW WITH SEN-MATRICULA = #MATRICULA
+      MOVE SEN-NOME TO #NOME-DIGITADOR
+    END-FIND
+    PERFORM DESC-LEI
+    DECIDE ON FIRST VALUE OF #SEXO-VIEW
+      VALUE 1
+        #SEXO := 'M'
+      VALUE 2
+        #SEXO := 'F'
+      VALUE 3
+        #SEXO := 'S'
+      NONE
+        IGNORE
+    END-DECIDE
+    DECIDE ON FIRST VALUE OF #STATUS
+      VALUE '1'
+        #DESCREG := 'REGISTRO ATIVO'
+      VALUE '2'
+        #DESCREG := 'REGISTRO EM BAIXA'
+      VALUE '3'
+        #DESCREG := 'REGISTRO CANCELADO'
+      VALUE '4'
+        #DESCREG := 'LIV. CONDICIONAL'
+      VALUE '6'
+        #DESCREG := 'EXT. PUNIBILIDADE'
+      VALUE '7'
+        #DESCREG := 'MANDADOS DE PRISAO'
+      NONE
+        IGNORE
+    END-DECIDE
+    DECIDE ON FIRST VALUE OF #INSTRUCAO
+      VALUE  0
+        #DESC-INSTRUCAO := 'Nao Informada'
+      VALUE  1
+        #DESC-INSTRUCAO := 'Nao Alfabetizado'
+      VALUE  2
+        #DESC-INSTRUCAO := '1o. Grau Incompleto'
+      VALUE  3
+        #DESC-INSTRUCAO := '1o. Grau Completo'
+      VALUE  4
+        #DESC-INSTRUCAO := '2o. Grau Incompleto'
+      VALUE  5
+        #DESC-INSTRUCAO := '2o. Grau Completo'
+      VALUE  6
+        #DESC-INSTRUCAO := 'Superior Incompleto'
+      VALUE  7
+        #DESC-INSTRUCAO := 'Superior Completo'
+      NONE
+        IGNORE
+    END-DECIDE
+    DECIDE ON FIRST VALUE OF #ALTURA
+      VALUE  0
+        #DESC-ALTURA    := 'Nao Informada'
+      VALUE  1
+        #DESC-ALTURA    := '1,60 ou Menos'
+      VALUE  2
+        #DESC-ALTURA    := '1,61 - 1,70'
+      VALUE  3
+        #DESC-ALTURA    := '1,71 - 1,80'
+      VALUE  4
+        #DESC-ALTURA    := '1,81 - 1,90'
+      VALUE  5
+        #DESC-ALTURA    := '1,91 ou Mais'
+      NONE
+        IGNORE
+    END-DECIDE
+    TAB := 202
+    COD := #ESTADO-CIVIL
+    PERFORM SISST001 PESQ RESP
+    DESCEL := RESP
+    MOVE DESCEL TO #DESC-CIVIL
+**
+    TAB := 203
+    COD := #CUTIS
+    PERFORM SISST001 PESQ RESP
+    DESCEL := RESP
+    MOVE DESCEL TO #DESC-CUTIS
+**
+    TAB := 205
+    COD := #COR-CABELO
+    PERFORM SISST001 PESQ RESP
+    DESCEL := RESP
+    MOVE DESCEL TO #DESC-COR
+*
+    DECIDE ON FIRST VALUE OF #TIPO-CABELO
+      VALUE  0
+        #DESC-TIPOCABELO := 'Nao Informado'
+      VALUE  1
+        #DESC-TIPOCABELO := 'Liso'
+      VALUE  2
+        #DESC-TIPOCABELO := 'Encaracolado'
+      VALUE  3
+        #DESC-TIPOCABELO := 'Ondulado'
+      VALUE  4
+        #DESC-TIPOCABELO := 'Carapinha'
+      NONE VALUE
+        IGNORE
+    END-DECIDE
+    TAB := 204
+    COD := #COR-OLHOS
+    PERFORM SISST001 PESQ RESP
+    DESCEL := RESP
+    MOVE DESCEL TO #DESC-OLHO
+*
+    DECIDE ON FIRST VALUE OF #COMPLEICAO
+      VALUE  0
+        #DESC-COMPLEICAO := 'Nao Informada'
+      VALUE  1
+        #DESC-COMPLEICAO := 'Magro'
+      VALUE  2
+        #DESC-COMPLEICAO := 'Medio'
+      VALUE  3
+        #DESC-COMPLEICAO := 'Gordo'
+      VALUE  4
+        #DESC-COMPLEICAO := 'Troncudo'
+      VALUE  5
+        #DESC-COMPLEICAO := 'Raquitico'
+      NONE VALUE
+        IGNORE
+    END-DECIDE
+    #NOME-VITIMA(1) :=  #VITIMAZ(1)
+      #DESC-SEXO := #SEXO-VITIMA1
+      PERFORM DESC-SEXO
+      #SEXO-VITIMA1 := #DESC-SEXO
+    #NOME-VITIMA(2) :=  #VITIMAZ(2)
+      #DESC-SEXO := #SEXO-VITIMA2
+      PERFORM DESC-SEXO
+      #SEXO-VITIMA2 := #DESC-SEXO
+    #NOME-VITIMA(3) :=  #VITIMAZ(3)
+      #DESC-SEXO := #SEXO-VITIMA3
+      PERFORM DESC-SEXO
+      #SEXO-VITIMA3 := #DESC-SEXO
+    #NOME-VITIMA(4) :=  #VITIMAZ(4)
+      #DESC-SEXO := #SEXO-VITIMA4
+      PERFORM DESC-SEXO
+      #SEXO-VITIMA4 := #DESC-SEXO
+*
+    SET KEY PF3='SCRP1300'
+    INPUT USING MAP  'SCRM1421'
+    INPUT USING MAP  'SCRM1422'
+    INPUT USING MAP  'SCRM1423'
+    PERFORM MOSTRA-OCORRENCIAS
+  SET CONTROL 'N'
+  INPUT NO ERASE ALARM 18/29
+    'CONFIRMACAO..(S/N).:'(I) #CONF(AD=AIT'_')
+  SET KEY PF3 ENTR
+  IF NOT (*PF-KEY = 'PF3' OR = 'ENTR')
+    REINPUT 'Tecla invalida' ALARM
+  END-IF
+  IF *PF-KEY = 'PF3'
+    FETCH 'SCRP1000'
+  END-IF
+  IF NOT (#CONF = 'S' OR = 'N')
+     REINPUT 'Confirmacao invalida' ALARM
+  END-IF
+  IF #CONF = 'N'
+     BACKOUT TRANSACTION
+     FETCH 'SCRP1300'
+  ELSE
+     CRIMINAL1-VIEW.STATUS-REG := 5
+     CRIMINAL1-VIEW.TIPO-REG   := 'EX'
+     UPDATE(0191)
+     END TRANSACTION
+     fETCH 'SCRP1300'
+  END-IF
+END-FIND
+IF *COUNTER(0191) = 0
+  MOVE
+'                   Nenhuma Ficha Criminal Foi Encontrada'
+    TO #MENSAGEM
+  INPUT USING MAP 'SCRMERRO'
+FETCH 'SCRP1420'      /* POR QUE VOLTA PARA CONSULTA?
+END-IF
+DEFINE SUBROUTINE MOSTRA-OCORRENCIAS
+  #I := 5
+  IF #OBSERVACOES(1) NE ' '
+    IF NOT (*PF-KEY = 'PF3' OR = 'ENTR')
+      REINPUT 'Tecla invalida' ALARM
+    END-IF
+  END-IF
+  FOR #OCORRENCIA = 2 TO 40
+      IF #OCORRENCIA = 2
+        COMPUTE #J = #OCORRENCIA + 4
+        COMPUTE #L = #OCORRENCIA + 5
+        COMPUTE #M = #OCORRENCIA + 6
+      ELSE
+        COMPUTE #I = #M + 1
+        COMPUTE #J = #M + 2
+        COMPUTE #L = #M + 3
+        COMPUTE #M = #M + 4
+      END-IF
+      #OBSERVACOES(1)  := #OBSERVACOEZ(#I)
+      PERFORM DESC-LEI
+      #OBSERVACOES(2)  := #OBSERVACOEZ(#J)
+      #OBSERVACOES(3)  := #OBSERVACOEZ(#L)
+      #OBSERVACOES(4)  := #OBSERVACOEZ(#M)
+*     RESET #OBSERVACOES(*)
+    #NOME-VITIMA(1)  := #VITIMAZ(#I)
+      #DESC-SEXO := #SEXO-VITIMA1
+      PERFORM DESC-SEXO
+      #SEXO-VITIMA1 := #DESC-SEXO
+    #NOME-VITIMA(2)  := #VITIMAZ(#J)
+      #DESC-SEXO := #SEXO-VITIMA2
+      PERFORM DESC-SEXO
+      #SEXO-VITIMA2 := #DESC-SEXO
+    #NOME-VITIMA(3)  := #VITIMAZ(#L)
+      #DESC-SEXO := #SEXO-VITIMA3
+      PERFORM DESC-SEXO
+      #SEXO-VITIMA3 := #DESC-SEXO
+    #NOME-VITIMA(4)  := #VITIMAZ(#M)
+       #DESC-SEXO := #SEXO-VITIMA4
+       PERFORM DESC-SEXO
+       #SEXO-VITIMA4 := #DESC-SEXO
+      INPUT MAP 'SCRM1423'
+      SET KEY PF3 ENTR
+      IF NOT (*PF-KEY = 'PF3' OR = 'ENTR')
+        REINPUT 'Tecla invalida' ALARM
+      END-IF
+      IF *PF-KEY = 'PF3'
+        FETCH 'SCRP1300'
+      END-IF
+      IF #OBSERVACOES(1) = ' '
+         ESCAPE BOTTOM
+      END-IF
+END-FOR
+END-SUBROUTINE
+DEFINE SUBROUTINE DESC-SEXO
+    DECIDE ON FIRST VALUE OF #DESC-SEXO
+      VALUE '1'
+        #DESC-SEXO := 'M'
+      VALUE '2'
+        #DESC-SEXO := 'F'
+      VALUE '3'
+        #DESC-SEXO := 'S'
+      NONE
+        IGNORE
+    END-DECIDE
+END-SUBROUTINE
+DEFINE SUBROUTINE DESC-LEI
+    DECIDE ON FIRST VALUE OF #OBSERVACOES-LEI
+      VALUE '1'
+        MOVE '1 - Contravencoes Penais' TO #OBSERVACOES-LEI
+      VALUE '2'
+        MOVE '2 - Crimes Contra a Pessoa' TO #OBSERVACOES-LEI
+      VALUE '3'
+        MOVE '3 - Crimes Contra o Patrimonio' TO #OBSERVACOES-LEI
+      VALUE '4'
+        MOVE '4 - Crimes Contra a Prop. Imaterial' TO #OBSERVACOES-LEI
+      VALUE '5'
+        MOVE '5 - Crimes Contra a Org. do Trabalho' TO #OBSERVACOES-LEI
+   VALUE '6'
+     MOVE '6 - Crimes contra o Sent. Rel. e contra o Resp. aos Mortos'
+           TO #OBSERVACOES-LEI
+      VALUE '7'
+        MOVE '7 - Crimes Contra os Costumes' TO #OBSERVACOES-LEI
+      VALUE '8'
+        MOVE '8 - Crimes Contra a Familia' TO #OBSERVACOES-LEI
+      VALUE '9'
+        MOVE '9 - Crimes Contra a Incol. Publica' TO #OBSERVACOES-LEI
+      VALUE '10'
+        MOVE '10 - Crimes Contra a Paz Publica' TO #OBSERVACOES-LEI
+      VALUE '11'
+        MOVE '11 - Crimes contra a Fe Publica' TO #OBSERVACOES-LEI
+      VALUE '12'
+        MOVE '12 - Crimes contra a Adm. Publica' TO #OBSERVACOES-LEI
+      VALUE '13'
+        MOVE '13 - Outras' TO #OBSERVACOES-LEI
+      NONE
+        IGNORE
+    END-DECIDE
+END-SUBROUTINE
+END

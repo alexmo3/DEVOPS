@@ -1,0 +1,157 @@
+* >Natural Source Header 000000
+* :Mode S
+* :CP
+* :LineIncrement 10
+* <Natural Source Header
+* *************************************
+* SCRP4150 - TRATAMENTO DE REGISTROS REJEITADOS
+* 03/03/2004
+* *******************************
+DEFINE DATA
+GLOBAL USING SCRG001
+LOCAL USING SCRLINFJ
+LOCAL
+1 WCOMANDO         (A5)
+1 WIMPRESSORA      (A8)
+1 REDEFINE WIMPRESSORA
+  2 #IMP             (A4)
+1 #UPD    (A01)
+1 ISN               (P08/1:14)
+1 VNUM              (A11/1:14)
+1 #INFREG  (A20)
+1 REDEFINE #INFREG
+  2 #INF000  (N09)
+  2 #INFNUM  (N11)
+1 #NREGISTRO                  (N11)
+1 #AREGISTRO                  (A11)
+1 REDEFINE #AREGISTRO
+  2 #REGISTRO-GERAL    (N11)
+1 VERRO             (A57/1:14)
+1 VTIPO             (A02/1:14)
+1 IND               (N02)
+1 OPCAO             (N02)
+1 WERRO             (A60)
+1 WMAT2             (N7)
+1 WSENHA2           (A6)
+END-DEFINE
+********************************************************
+MOVE  #MATRICULA# TO WMAT2
+MOVE  #SENHA#     TO WSENHA2
+IND := 1
+INCLUDE SISCPFS
+READ INF-REJ  BY NU-IG-UF
+  MOVE NU-IG-UF TO #INFREG
+  MOVE *ISN                            TO ISN(IND)
+  MOVE RIGHT JUSTIFIED #INFNUM         TO VNUM(IND)
+  MOVE INF-REJ.DS-ERRO                 TO VERRO(IND)
+  MOVE INF-REJ.TP-REGISTRO             TO VTIPO(IND)
+  ADD 1 TO IND
+  PERFORM MONTA-TELA
+  AT END OF DATA
+    IF IND >= 1
+      REP2.  REPEAT
+        INPUT MAP 'SCRM4150'
+        IF *PF-KEY =  'PF11'
+          PERFORM PEDE-IMPRESSORA
+          IF *PF-KEY NE 'PF3'
+            WRITE(1) NOTITLE USING FORM 'SCRF4150'
+            CLOSE PRINTER(1)
+          END-IF
+        ELSE
+          IF OPCAO NE 0  AND *PF-KEY = 'ENTR'
+            IF ISN(OPCAO) NE 0
+              MOVE VNUM(OPCAO) TO #AREGISTRO
+              MOVE #REGISTRO-GERAL TO #NREGISTRO
+              RESET #UPD
+              CALLNAT 'SCRP4151' #NREGISTRO WMAT2 WSENHA2 #UPD
+              IF #UPD EQ 'S'
+                GET INF-REJ  ISN(OPCAO)
+                MOVE 'T' TO FL-TRATAMENTO
+                UPDATE RECORD
+                END TRANSACTION
+              END-IF
+              RESET OPCAO
+            ELSE
+              REINPUT 'OPCAO INVALIDA' MARK *OPCAO ALARM
+            END-IF
+          ELSE
+            RESET VNUM(*) VERRO(*) ISN(*) WERRO
+            PERFORM APAGA-REC-REJ
+            FETCH 'SCRP4100'
+          END-IF
+        END-IF
+      END-REPEAT
+    END-IF
+  END-ENDDATA
+END-READ   /*
+PERFORM APAGA-REC-REJ
+FETCH 'SCRP4100'
+* ******************************
+DEFINE SUBROUTINE MONTA-TELA
+IF IND = 15
+  IND := 1
+  REP1.  REPEAT
+    INPUT MAP 'SCRM4150'
+    IF *PF-KEY = 'PF11'
+      PERFORM PEDE-IMPRESSORA
+      IF *PF-KEY NE 'PF3'
+        WRITE(1) NOTITLE USING FORM 'SCRF4150'
+        CLOSE PRINTER(1)
+      END-IF
+    ELSE
+      IF OPCAO GT 0 AND OPCAO LE 14
+        MOVE VNUM(OPCAO) TO #AREGISTRO
+        MOVE #REGISTRO-GERAL TO #NREGISTRO
+        RESET #UPD
+        CALLNAT 'SCRP4151' #NREGISTRO WMAT2 WSENHA2 #UPD
+        IF #UPD EQ 'S'
+          GET INF-REJ  ISN(OPCAO)
+          MOVE 'T' TO FL-TRATAMENTO
+          UPDATE RECORD
+          END TRANSACTION
+        END-IF
+        RESET OPCAO
+      ELSE
+        IF OPCAO EQ 0
+          IF *PF-KEY = 'ENTR'
+            ESCAPE ROUTINE
+          END-IF
+        ELSE
+          RESET VNUM(*) VERRO(*) ISN(*)
+          FETCH 'SCRP4100'
+        END-IF
+      END-IF
+    END-IF
+  END-REPEAT
+END-IF
+END-SUBROUTINE
+* ********************************
+DEFINE SUBROUTINE PEDE-IMPRESSORA
+* ********************************
+SET CONTROL 'WC07L28FNB12/35'
+INPUT WITH TEXT 'INFORME IMPRESSORA.' ALARM
+  2/2 'IMPRESSORA:' #IMP (AD=MIT'_')
+  4/2 'PF3 - RETORNA.'
+IF NOT (*PF-KEY = 'PF3' OR = 'ENTR')
+  REINPUT 'TECLA DE FUNCAO INVALIDA' MARK *#IMP ALARM
+END-IF
+IF #IMP = ' ' AND *PF-KEY = 'ENTR'
+  REINPUT 'INFORME IMPRESSORA.' MARK *#IMP ALARM
+ELSE
+  IF *PF-KEY NE 'PF3'
+    END TRANSACTION
+    COMPRESS 'H' #IMP INTO WCOMANDO LEAVING NO SPACE
+    DEFINE PRINTER (1) OUTPUT WIMPRESSORA
+    FORMAT (1) LS=80 PS=60 EJECT OFF
+  END-IF
+END-IF
+SET CONTROL 'WB'
+END-SUBROUTINE
+* *******************************************
+DEFINE SUBROUTINE APAGA-REC-REJ
+READ INF-REJ BY FL-TRATAMENTO STARTING FROM 'T' THRU 'T'
+  DELETE RECORD
+  END TRANSACTION
+END-READ
+END-SUBROUTINE
+END

@@ -1,0 +1,212 @@
+* >Natural Source Header 000000
+* :Mode S
+* :CP
+* :LineIncrement 10
+* <Natural Source Header
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+* SISTEMA    : Sistema de Identificacao Criminal             *
+* PROGRAMA   : SCRP1400                                      *
+* O QUE FAZ  ? Consultas                                     *
+* Autor      : Jose Antonio Coelho                           *
+* Data       : 11 de Setembro de 1997                        *
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+DEFINE DATA
+GLOBAL USING SCRG001
+LOCAL
+1 CRIMINAL VIEW OF SIC-CADASTRO
+  2 DATDOC-ATU
+  2 DATA-ALTERACAO-STATUS
+  2 STATUS-REG
+1 #OPC (A01/1:5)
+1 #DATA-INI (N08)
+1 REDEFINE #DATA-INI
+  2 #ANO-INI (N04)
+  2 #MES-INI (N02)
+  2 #DIA-INI (N02)
+1 #DATA-FIM (N08)
+1 REDEFINE #DATA-FIM
+  2 #ANO-FIM (N04)
+  2 #MES-FIM (N02)
+  2 #DIA-FIM (N02)
+1 #DATA      (N08) INIT <*DATN>
+1 #FICHA1    (N11)
+1 #FICHA2    (N11)
+1 #REG       (N18)
+1 #IMP       (A08)
+1 #STATUS    (N01)
+END-DEFINE
+SET KEY ALL
+SET CONTROL 'MB'
+*
+#FUNCAO# := 'Consultas'
+#PROGRAMA# := *PROGRAM
+INPUT USING MAP 'SCRM1410'
+DECIDE ON FIRST VALUE OF *CURSOR
+  VALUE 11044
+    PERFORM VERIFICA-DATA   /* QTDE DE FICHA E MOSTRA FICHAS DIGITADAS
+    FETCH 'SCRP1410' #DATA-INI
+  VALUE 13047                  /* CONSULTA DETERMINADA FICHA
+    FETCH 'SCRP1420'
+  VALUE 15050
+        PERFORM VERIFICA-DATA      /* QTDE DIARIA E QUEM DIGITOU
+        FETCH 'SCRP1430' #DATA-INI
+  VALUE 17053                     /* QTDE MENSAL E QUEM DIGITOU
+    SET CONTROL 'WC06L35B09/40F'
+    INPUT (SG=OFF IP=OFF) ALARM
+/   01T 'Data Inicial...' #DIA-INI(AD=AIL'_') '/' #MES-INI(AD=AIL'_')
+    '/' #ANO-INI (AD=AIL'_')
+/   01T 'Data Final.....' #DIA-FIM(AD=AIL'_') '/' #MES-FIM(AD=AIL'_')
+    '/' #ANO-FIM (AD=AIL'_')
+**  SET CONTROL 'WB'      /* GORETE
+    IF NOT (*PF-KEY = 'PF3' OR = 'ENTR')
+       REINPUT 'Tecla invalida' ALARM
+    END-IF
+    IF *PF-KEY = 'PF3'
+       FETCH 'SCRP1400'
+    END-IF
+    IF #DIA-INI = 0 OR #MES-INI = 0 OR #ANO-INI = 0
+       REINPUT 'Data Inicial invalida' MARK *#DIA-INI ALARM
+    END-IF
+    IF #ANO-INI LT 1997
+       REINPUT 'Ano invalido' MARK *#ANO-INI ALARM
+    END-IF
+    IF #DATA-INI GT #DATA
+       REINPUT 'Data invalida' MARK *#DIA-INI ALARM
+    END-IF
+    IF #DIA-FIM = 0 OR #MES-FIM = 0 OR #ANO-FIM = 0
+       REINPUT 'Data Final invalida' MARK *#DIA-FIM ALARM
+    END-IF
+    IF #ANO-FIM LT 1997
+       REINPUT 'Ano invalido' MARK *#ANO-FIM ALARM
+    END-IF
+    IF #DATA-FIM LT #DATA-INI
+       REINPUT 'Data final invalida' MARK *#DIA-FIM ALARM
+    END-IF
+    IF #DATA-FIM GT #DATA
+       REINPUT 'Data final invalida' MARK *#DIA-FIM ALARM
+    END-IF
+**      FETCH 'SCRP1440' #DATA-INI #DATA-FIM   ****ERRO NO SORT****
+  FD33. FIND CRIMINAL WITH DATA-REG   = #DATA-INI THRU #DATA-FIM
+        WHERE STATUS-REG NE 5
+        MOVE *NUMBER TO #REG
+        END-FIND
+    SET CONTROL 'WB'
+    SET CONTROL 'WC08L35B09/40F'
+    INPUT (SG=OFF IP=OFF) ALARM
+    02/01 'Foram digitadas' #REG(AD=OIL EM=ZZ.ZZ9) 'Fichas'
+    03/01 '        nesse periodo                          '
+    04/02 'Tecle' '<ENTER>'(I) 'P/ Prosseguir'
+*   05/02 '     OU' '<PF3>'(I) 'P/ RETORNAR'
+    SET CONTROL 'WB'      /* GORETE
+    IF NOT (*PF-KEY = 'PF3' OR = 'ENTR')
+       REINPUT 'Tecla invalida' ALARM
+    END-IF
+    IF *PF-KEY = 'PF3' OR = 'ENTR'
+       FETCH 'SCRP1400'
+    END-IF
+**
+  VALUE 19057                     /* QTDE POR STATUS REG
+    SET CONTROL 'WC07L35B09/40F'
+    INPUT (SG=OFF IP=OFF) ALARM
+/   01T 'Data Inicial...' #DIA-INI(AD=AIL'_') '/' #MES-INI(AD=AIL'_')
+    '/' #ANO-INI (AD=AIL'_')
+/   01T 'Data Final.....' #DIA-FIM(AD=AIL'_') '/' #MES-FIM(AD=AIL'_')
+    '/' #ANO-FIM (AD=AIL'_')
+/   01T 'Status.........' #STATUS (AD=AIL'_')
+**  SET CONTROL 'WB'      /* GORETE
+    IF NOT (*PF-KEY = 'PF3' OR = 'ENTR')
+       REINPUT 'Tecla invalida' ALARM
+    END-IF
+    IF *PF-KEY = 'PF3'
+       FETCH 'SCRP1400'
+    END-IF
+    IF #DIA-INI = 0 OR #MES-INI = 0 OR #ANO-INI = 0
+       REINPUT 'Data Inicial invalida' MARK *#DIA-INI ALARM
+    END-IF
+    IF #ANO-INI LT 1997
+       REINPUT 'Ano invalido' MARK *#ANO-INI ALARM
+    END-IF
+    IF #DATA-INI GT #DATA
+       REINPUT 'Data invalida' MARK *#DIA-INI ALARM
+    END-IF
+    IF #DIA-FIM = 0 OR #MES-FIM = 0 OR #ANO-FIM = 0
+       REINPUT 'Data Final invalida' MARK *#DIA-FIM ALARM
+    END-IF
+    IF #ANO-FIM LT 1997
+       REINPUT 'Ano invalido' MARK *#ANO-FIM ALARM
+    END-IF
+    IF #DATA-FIM LT #DATA-INI
+       REINPUT 'Data final invalida' MARK *#DIA-FIM ALARM
+    END-IF
+    IF #DATA-FIM GT #DATA
+       REINPUT 'Data final invalida' MARK *#DIA-FIM ALARM
+    END-IF
+    IF NOT (#STATUS = 1 OR = 2 OR = 3 OR = 4)
+       REINPUT 'Status Invalido' MARK *#STATUS  ALARM
+    END-IF
+        FIND CRIMINAL WITH
+*  DATA-ALTERACAO-STATUS = #DATA-INI THRU #DATA-FIM
+*       WHERE STATUS-REG = #STATUS
+              STATUS-REG = #STATUS
+        MOVE *NUMBER TO #REG
+        END-FIND
+    SET CONTROL 'WB'
+    SET CONTROL 'WC08L37B09/40F'
+    INPUT (SG=OFF IP=OFF) ALARM
+    02/01 'Foram encontradas' #REG(AD=OIL EM=ZZ.ZZ9) 'Fichas'
+    03/01 'nesse periodo com status = ' #STATUS (AD=OIL)
+    04/02 'Tecle' '<ENTER>'(I) 'P/ Prosseguir'
+*   05/02 '     OU' '<PF3>'(I) 'P/ RETORNAR'
+    SET CONTROL 'WB'      /* GORETE
+    IF NOT (*PF-KEY = 'PF3' OR = 'ENTR')
+       REINPUT 'Tecla invalida' ALARM
+    END-IF
+    IF *PF-KEY = 'PF3' OR = 'ENTR'
+       FETCH 'SCRP1400'
+    END-IF
+  NONE VALUE
+        IGNORE
+  END-DECIDE
+DEFINE SUBROUTINE VERIFICA-DATA
+    SET CONTROL 'WB'      /* GORETE
+    SET CONTROL 'WC08L35B09/40F'
+    INPUT (SG=OFF IP=OFF) ALARM
+    //  01T 'Informe a Data:' #DIA-INI(AD=AIL'_')
+    '/' #MES-INI(AD=AIL'_') '/' #ANO-INI (AD=AIL'_')
+     IF NOT (*PF-KEY = 'PF3' OR = 'ENTR')
+        REINPUT 'Tecla invalida' ALARM
+     END-IF
+     IF *PF-KEY = 'PF3'
+     SET CONTROL 'WB'      /* GORETE
+        FETCH 'SCRP1400'
+     END-IF
+    IF #DIA-INI = 0 OR #MES-INI = 0 OR #ANO-INI = 0
+       REINPUT 'Data Inicial invalida' MARK *#DIA-INI ALARM
+    END-IF
+    IF #ANO-INI LT 1997
+       REINPUT 'Ano invalido' MARK *#ANO-INI ALARM
+    END-IF
+    IF #DATA-INI GT #DATA
+       REINPUT 'Data invalida' MARK *#DIA-INI ALARM
+    END-IF
+*   FD1. FIND (1) CRIMINAL WITH DATDOC-ATU = #DATA-INI
+    FD1. FIND    CRIMINAL WITH DATA-REG   = #DATA-INI
+                  WHERE STATUS-REG NE 5
+         MOVE *NUMBER TO #REG
+    END-FIND
+    INPUT NO ERASE
+    02/01 'Foram digitadas' #REG(AD=OIL EM=ZZ.ZZ9) 'Fichas'
+    03/01 '        nesse periodo                          '
+    04/02 'Tecle' '<ENTER>'(I) 'P/ Prosseguir'
+    05/02 '     ou' '<PF3>'(I) 'P/ Retornar'
+    SET CONTROL 'WB'      /* GORETE
+    IF NOT (*PF-KEY = 'PF3' OR = 'ENTR')
+       REINPUT 'Tecla invalida' ALARM
+    END-IF
+    IF *PF-KEY = 'PF3'
+       FETCH 'SCRP1400'
+    END-IF
+END-SUBROUTINE
+INCLUDE SCRCERRO
+END

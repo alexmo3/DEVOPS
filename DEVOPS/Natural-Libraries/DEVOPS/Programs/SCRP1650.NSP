@@ -1,0 +1,70 @@
+* >Natural Source Header 000000
+* :Mode S
+* :CP
+* :LineIncrement 10
+* <Natural Source Header
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+*  SISTEMA    : Sistema de Identificacao Criminal            *
+*  PROGRAMA   : SCRP1620                                     *
+*  O QUE FAZ  ? Relatorio                                    *
+*  Autor      : Jose Antonio Coelho                          *
+*  Data       : 29 de Julho de 1997                          *
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+*  Mapa       : SCRR1500, SCRMERRO                           *
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+DEFINE DATA
+LOCAL USING SCRLCRIM
+LOCAL
+* ------------------------------------
+1 #QUANT     (N06)
+1 #TOTAL     (N06)
+1 #VARIAVEIS
+  2 #NOME      (A35)
+  2 #MAE       (A30)
+  2 #PAI       (A30)
+  2 #STATUSREG (N01)
+  2 #DATA_NASC (N08)
+  2 REDEFINE #DATA_NASC
+    3 #ANO-A   (N04)
+    3 #MES-A   (N02)
+    3 #DIA-A   (N02)
+  2 #DATA-S    (N08)
+  2 REDEFINE #DATA-S
+    3 #DIA-S   (N02)
+    3 #MES-S   (N02)
+    3 #ANO-S   (N04)
+END-DEFINE
+*
+FORMAT (0) PS=60 LS=133
+SET KEY ALL
+FD33. READ CRIMINAL-VIEW BY REGISTRO-ESTADUAL-GERAL
+*
+  #NOME := NOME-COMPLETO
+  #MAE  := NOME-MAE
+  #PAI  := NOME-PAI
+  #DATA_NASC := DATA-NASC
+  #STATUSREG := STATUS-REG
+  MOVE  #ANO-A TO #ANO-S
+  MOVE  #MES-A TO #MES-S
+  MOVE  #DIA-A TO #DIA-S
+  WRITE TITLE LEFT JUSTIFIED
+    001T 'SECRETARIA DA SEGURANCA PUBLICA'
+    109T 'Data Emissao.' *DATE /
+    001T 'CODATA - COMPANHIA DE PROCESSAMENTO DE DADOS DA PARAIBA'
+    109T 'Hora Emissao.' *TIMX /
+    109T 'Pagina.......  ' *PAGE-NUMBER(0) ///
+    050T 'Relacao de Registros de Indice Criminal em Ordem Crescente' /
+    001T '-' (130) /
+  ADD 1 TO #QUANT
+  DISPLAY 'Registro' REGISTRO-ESTADUAL-GERAL 'Nome Completo' #NOME
+    'NOME DO PAI'  'NOME DA MAE' #MAE
+    'DATA NASCIMENTO' #DATA-S(ZP=OFF EM=99/ZZ/ZZZ9)
+    #STATUSREG
+  AT END OF DATA
+    WRITE //
+      01T '-' (130) /
+      45T '*** Total de Registros Lidos *** ' #QUANT(EM=ZZZ.ZZ9)
+  END-ENDDATA
+  RESET #VARIAVEIS
+END-READ
+END

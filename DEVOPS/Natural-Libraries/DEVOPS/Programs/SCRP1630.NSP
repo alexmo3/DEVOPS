@@ -1,0 +1,91 @@
+* >Natural Source Header 000000
+* :Mode S
+* :CP
+* :LineIncrement 10
+* <Natural Source Header
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+*  SISTEMA    : Sistema de Identificacao Criminal            *
+*  PROGRAMA   : SCRP1630                                     *
+*  OBJETIVO   : INCLUSAO DA FICHA INDICE CRIMINAL            *
+*  Autor      : Jose Antonio Coelho                          *
+*  Data       : 29 de Julho de 1997                          *
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+DEFINE DATA
+GLOBAL USING SCRG001
+LOCAL USING SCRLCRIM
+LOCAL USING SCRLSENH
+LOCAL
+* ------------------------------------
+1 #DATA-INI       (N08)
+1 REDEFINE #DATA-INI
+  2 #ANO-INI      (N04)
+  2 #MES-INI      (N02)
+  2 #DIA-INI      (N02)
+1 #DATA-FIM       (N08)
+1 REDEFINE #DATA-FIM
+  2 #ANO-FIM      (N04)
+  2 #MES-FIM      (N02)
+  2 #DIA-FIM      (N02)
+1 #MATRIC    (N07)
+1 #NOME-DIGITADOR (A30)
+1 #DATA-DIG (N08)
+1 REDEFINE #DATA-DIG
+  2 #ANO-DIG (N04)
+  2 #MES-DIG (N02)
+  2 #DIA-DIG (N02)
+1 #HORARIO   (N08)
+1 #MATRICULA (N07/1:12)
+1 #DIGITADOR (A30/1:12)
+1 #QUANTIDADE(N06/1:12)
+1 #QUANT     (N06)
+1 #TOTAL     (N06)
+1 #INDEX     (N06)
+1 #MENSAGEM  (A70)
+1 #FUNC      (A10) INIT <'RELATORIO'>
+1 #CONT      (N18) INIT <1>
+END-DEFINE
+*
+FORMAT (1) PS=60 LS=80
+SET KEY ALL
+  INPUT #DATA-INI #DATA-FIM
+  SET CONTROL 'N'
+  INPUT USING MAP 'SCRM1411'
+  FD33. FIND CRIMINAL-VIEW WITH DATDOC-ATU = #DATA-INI THRU #DATA-FIM
+        WHERE STATUS-REG NE 5
+        IF *COUNTER(FD33.) = #CONT
+               ADD 100 TO #CONT
+               SET CONTROL 'N'
+               INPUT NO ERASE  20/27
+           '** AGUARDE PROCESSAMENTO **'(I)
+        END-IF
+        END-ALL
+        SORT MATFUNC-ATU
+        USING DATDOC-ATU HORA-ATU
+  AT BREAK MATFUNC-ATU
+     ADD 1 TO #INDEX
+     MOVE #MATRIC TO #MATRICULA(#INDEX)
+     FD2. FIND (1) SENHA-VIEW WITH SEN-MATRICULA = #MATRIC
+                   MOVE SEN-NOME TO #DIGITADOR(#INDEX)
+     END-FIND
+     MOVE #QUANT TO #QUANTIDADE(#INDEX)
+     ADD  #QUANT TO #TOTAL
+     RESET #QUANT
+  END-BREAK
+  ADD 1 TO #QUANT
+  #MATRIC           := CRIMINAL-VIEW.MATFUNC-ATU
+AT END OF DATA
+   WRITE (1) NOTITLE USING FORM 'SCRR1600'
+END-ENDDATA
+AT END OF PAGE(1)
+   WRITE(1) /// '-'(71) 'CODATA-'
+END-ENDPAGE
+END-SORT
+IF *COUNTER(FD33.) = 0
+   MOVE
+'               Nenhuma Ficha Foi Cadastrada Nesse Periodo.'
+   TO #MENSAGEM
+   INPUT USING MAP 'SCRMERRO'
+END-IF
+STACK TOP COMMAND 'SCRP1600'
+END

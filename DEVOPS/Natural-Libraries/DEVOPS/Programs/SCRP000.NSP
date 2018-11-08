@@ -1,0 +1,90 @@
+* >Natural Source Header 000000
+* :Mode S
+* :CP
+* :LineIncrement 10
+* <Natural Source Header
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+* SISTEMA    : Sistema de Identificacao Criminal             *
+* PROGRAMA   : SCRP001                                       *
+* O QUE FAZ  ? Inclusao da Ficha Indice Criminal             *
+* Autor      : Jose Antonio Coelho                           *
+* Data       : 29 de Julho de 1997                           *
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+DEFINE DATA
+GLOBAL USING SCRG001
+LOCAL  USING SCRLSENH
+LOCAL
+1 #CONT      (N02)
+1 #MATRICULA (N07)
+1 #SENHA     (A07)
+1 #NSENH     (A07)
+1 #WSENH     (A07)
+1 #TIME      (A08)
+1 REDEFINE #TIME
+  2 #H       (N02)
+  2 FILLER 1X
+  2 #M       (N02)
+  2 FILLER 1X
+  2 #S       (N02)
+1 #HORARIO   (N06)
+1 REDEFINE #HORARIO
+  2 #HH      (N02)
+  2 #MM      (N02)
+  2 #SS      (N02)
+END-DEFINE
+SET KEY ALL
+SET CONTROL 'MB'
+#PROGRAMA# := *PROGRAM
+REPEAT
+MOVE *TIMX TO #TIME
+MOVE #H TO #HH
+MOVE #M TO #MM
+MOVE #S TO #SS
+FD0. FIND SENHA-VIEW WITH SEN-MATRICULA = 9090909
+END-FIND
+IF *COUNTER(FD0.) = 0
+    SENHA-VIEW.SEN-MATRICULA       := 9090909
+    SENHA-VIEW.SEN-NOME            := 'SOLON MIRANDA'
+    SENHA-VIEW.SEN-SENHA           := 'ZEZE'
+    SENHA-VIEW.SEN-NIVEL           := 9
+    SENHA-VIEW.SEN-MAT-ATUALIZADOR := 9090909
+    SENHA-VIEW.SEN-DATA-PROC       := *DATN
+    SENHA-VIEW.SEN-HORA-PROC       := #HORARIO
+    STORE SENHA-VIEW
+    END TRANSACTION
+END-IF
+INPUT USING MAP 'SCRMINIC'
+FD1. FIND (1) SENHA-VIEW WITH SEN-MATRICULA = #MATRICULA
+     ADD 1 TO #CONT
+     IF #CONT = 3
+        INPUT NO ERASE ALARM 18/14
+     'Voce ultrapassou o numero maximo de tentativas - Tecle <ENTER>'(I)
+        CALL 'NATISO'
+     END-IF
+     IF #SENHA NE SEN-SENHA
+        REINPUT 'Verifique corretamente sua senha' MARK *#SENHA ALARM
+     END-IF
+     MOVE SEN-NIVEL TO #NIVEL#
+     IF #NSENH NE ' '
+        INPUT NO ERASE(SG=OFF IP=OFF AD=ANT'_')
+        20/52 'Nova Senha:'(I) #WSENH
+        23/07 'Informe nova senha p/ confirmacao             '(I)
+        IF #NSENH NE #WSENH
+           INPUT NO ERASE 23/07
+           'Confirmacao invalida - Tecla <ENTER>             ' (I)
+           FETCH 'SCRP000'
+        ELSE
+           SENHA-VIEW.SEN-SENHA := #WSENH
+           UPDATE(FD1.)
+           END TRANSACTION
+        END-IF
+     END-IF
+END-FIND
+IF *COUNTER(FD1.) = 0
+    REINPUT 'Usuario nao cadastrado no sistema' ALARM
+END-IF
+#MATRICULA# := #MATRICULA
+FETCH 'SCRMP00'
+END-REPEAT
+END

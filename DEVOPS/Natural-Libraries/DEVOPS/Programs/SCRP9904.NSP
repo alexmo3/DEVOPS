@@ -1,0 +1,510 @@
+* >Natural Source Header 000000
+* :Mode S
+* :CP
+* :LineIncrement 10
+* <Natural Source Header
+**********************************************************************
+*   PROGRAMA    : SCRPP004                                           *
+*   CLIENTE     : SSP -    SEC. DE SEGURANCA PUBLICA       *
+*                          INSTITUTO DE IDENTIFICACAO                *
+*   ANALISTA    : ANALICE                                            *
+*   OBJETIVO    : DETALHAMENTO INDIVIDUO INFOSEG                     *
+*   ALTERACAO   : 04/08/2005                                         *
+**********************************************************************
+DEFINE DATA
+GLOBAL USING SCRG001
+LOCAL  USING SCRLIDC
+LOCAL  USING SCRLPESQ
+LOCAL  USING SCRTABEL
+LOCAL
+1 PESSOA (A245/4)
+1 REDEFINE PESSOA
+ 2 OCORRENCIAS (4)
+   3  VNOME        (A50)
+   3  VPAI         (A30)
+   3  VMAE         (A30)
+   3  VDATANASC    (A10)
+   3  VALCUNHA     (A15)
+   3  VNATURAL     (A25)
+   3  VIDENT       (N11)
+   3  VEND(A66)
+   3  REDEFINE VEND
+      4  VCARACT      (A39)
+      4  VCARAC2      (A27)
+   3  VISN         (N08)
+1  OPCAO         (N1)
+1  I             (N2)
+1  J             (N2)
+1 LETRA (A1)
+1 #SEXO            (N01)
+1 V_SEXO           (A15)
+1 #PROFISSAO       (A70)
+1 WPROF            (A30)
+1 #INSTRUCAO       (N01)
+1 #GINSTRUCAO      (A70)
+1 #DESCREG         (A11)
+1 #BAIRRO          (A15)
+1 #UF-END          (A02)
+* 1 #END             (A66)
+1 #END             (A56)
+1 #DESC            (A39)
+1 #NOME-MAE1        (A72)
+1 #NOME-MAE         (A60)
+1 REDEFINE #NOME-MAE
+ 2 #NOME-MAE-RED      (A30)
+ 2 #NOME-MAE-FILLER   (A30)
+1 #NOME-PAI1          (A72)
+1 #NOME-PAI           (A60)
+1 REDEFINE #NOME-PAI
+ 2 #NOME-PAI-RED      (A30)
+ 2 #NOME-PAI-FILLER   (A30)
+1 #NOME1              (A74)
+1 #NOME               (A60)
+1 REDEFINE #NOME
+ 2 #NOME-RED         (A50)
+ 2 #NOME-FILLER      (A10)
+1 #STATUSREG       (A01)
+1 CODMUN           (A27)
+1 DESCMUN          (A29)
+1 REDEFINE DESCMUN
+  2 DESCMUN-RED (A22)
+  2 DESCMUN-FIL (A05)
+1 #NOMEFIM         (A30) INIT <'ZZZZZZZZ'>
+1 #ALTURA (N01)
+1 #DESC-ALTURA  (A20)
+1 #CUTIS          (N01)
+1 #DESC-CUTIS     (A20)
+1 #COR-CABELO     (N02)
+1 #DESC-COR       (A20)
+1 #TIPO-CABELO    (N01)
+1 #DESC-TIPOCABELO(A20)
+1 #COR-OLHOS      (N02)
+1 #DESC-OLHO      (A09)
+1 #SINAIS         (A60)
+1 #COMPLEICAO     (N01)
+1 #DESC-COMPLEICAO(A20)
+1 #MENS  (A47)
+1 CHAVE  (A30)
+1 REDEFINE CHAVE
+  2 A-CHAVE (A11)
+1 #REGGER (A11)
+1 REDEFINE #REGGER
+  2  N-#REGGER (N11)
+1 PK_UF (A25)
+1 COMUN            (A70)
+1 #DATAINC         (N08)
+1 #DATAMOV         (N08)
+1 #DATANASC        (N08)
+1 REDEFINE #DATANASC
+  2 #DATANASC-AA (N04)
+  2 #DATANASC-MM (N02)
+  2 #DATANASC-DD (N02)
+1 #DATA-AA( N4)
+1 V_DATILOSC (A70)
+1 V_DATANASC1(A45)
+1 REDEFINE V_DATANASC1
+  2 V_TAG1 (A17)
+  2 V_DATANASC (A10)
+  2 V_TAG2 (A18)
+1 V_DATAINC1 (A41)
+1 REDEFINE V_DATAINC1
+  2 V_TAG3 (A15)
+  2 V_DATAINC  (A10)
+  2 V_TAG4 (A16)
+1 V_MOVPENIT(A70)
+1 V_DATAMOV1(A49)
+1 REDEFINE V_DATAMOV1
+  2 V_TAG5 (A19)
+  2 V_DATAMOV  (A10)
+  2 V_TAG6 (A20)
+1 V_ALCUNHA  (A70)
+1 V_ALCUNHANOME (A70)
+1 V_FORAGIDO (A70)
+1 V_OBITO (A70)
+1 V_OBS   (A70)
+1 V_DOC   (A70)
+1 V_DOCTIPO (A70)
+1 V_DOCNUM (A70)
+1 V_DOCORGAO (A70)
+1 V_DOCDATA  (A70)
+1 V_END      (A70)
+1 V_ENDTIPO  (A70)
+1 V_ENDDESC  (A79)
+* 1 V_ENDDESC  (A100)
+1 #FIRST (L)
+1 #ENDERECO        (A30)
+1 #UF-NASC         (A02)
+1 A-SUBNOME (A30)
+1 #VAR (C)
+END-DEFINE
+*
+* FORMAT PS=100 LS=159 ZP=OFF SG=OFF KD=OFF IP=OFF
+FORMAT PS=100 LS=80 ZP=OFF SG=OFF KD=OFF IP=OFF
+#PROGRAMA# := *PROGRAM
+SET KEY ALL
+SET CONTROL 'MB'
+REPEAT
+  RESET OPCAO
+  INPUT (IP=OFF SG=OFF AD=MIL'_') MARK 1
+*   /// 15T '1'(I) ' =>  NUMERO NO ARQ CRIMINAL'/
+*       15T '9'(I) ' =>  SAIR'///
+*       15T 'OPCAO:' OPCAO                   //
+   ///  15T 'PESQUISA:' CHAVE (AD=U)
+*
+*   MOVE TRUE TO #FIRST
+    MOVE 1    TO OPCAO
+    MOVE FALSE TO #FIRST
+    IF OPCAO = 0 OR OPCAO > 1 AND OPCAO NE 9
+       REINPUT 'OPCAO INVALIDA' MARK 1
+    END-IF
+*
+    DECIDE ON FIRST VALUE OF OPCAO
+      VALUE 1                              /* NOME NO CRIMINAL
+        IF CHAVE NE ' '
+           PERFORM ZERA
+           MOVE A-CHAVE TO #REGGER
+           PERFORM PROCURA-CRIMINAL
+        END-IF
+      VALUE 9
+        TERMINATE
+      NONE
+        ESCAPE BOTTOM
+ END-DECIDE
+ RESET CHAVE
+END-REPEAT
+**************************
+DEFINE SUBROUTINE PROCURA-CRIMINAL
+**************************
+F1. FIND (1) SIC-CADASTRO-VIEW  WITH
+   REGISTRO-ESTADUAL-GERAL = N-#REGGER
+     PK_UF := '<pk_uf>'
+      COMPRESS PK_UF N-#REGGER '</pk_uf>' INTO PK_UF LEAVING NO SPACE
+      #STATUSREG := STATUS-REG
+      #CUTIS     := CUTIS
+      #ALTURA    := ALTURA
+      #COR-OLHOS := COR-OLHOS
+      #INSTRUCAO := GRAU-INSTRUCAO
+      #SEXO      := SEXO
+      IF SUBSTR(PROFISSAO,1,1) = '*'
+         WPROF := 'na'
+      ELSE
+         WPROF := PROFISSAO
+      END-IF
+      #PROFISSAO := '<profissao>'
+      COMPRESS #PROFISSAO WPROF '</profissao>'
+      INTO #PROFISSAO LEAVING NO SPACE
+      MOVE DATA-NASC TO #DATANASC
+      MOVE DATA-REG  TO #DATAINC
+      MOVE DATDOC-ATU  TO #DATAMOV
+      IF NOT(#DATANASC = MASK(YYYYMMDD))
+         IF  #DATANASC-AA LT 1890
+            MOVE 1900 TO #DATANASC-AA
+         END-IF
+         IF #DATANASC-MM LT 1
+            MOVE 01 TO #DATANASC-MM
+         END-IF
+         IF #DATANASC-DD LT 1
+            MOVE 01 TO #DATANASC-DD
+         END-IF
+      END-IF
+      PERFORM SISSD002 #DATANASC
+      MOVE EDITED #DATANASC(EM=99/99/9999) TO V_DATANASC
+      V_TAG1 :='<data_nascimento>'
+      V_TAG2 :='</data_nascimento>'
+      PERFORM SISSD002 #DATAINC
+      MOVE EDITED #DATAINC(EM=99/99/9999) TO V_DATAINC
+      V_TAG3 :='<data_inclusao>'
+      V_TAG4 :='</data_inclusao>'
+      PERFORM SISSD002 #DATAMOV
+      MOVE EDITED #DATAMOV(EM=99/99/9999) TO V_DATAMOV
+      V_TAG5 :='<data_movimentacao>'
+      V_TAG6 :='</data_movimentacao>'
+      MOVE NOME-COMPLETO TO #NOME
+      COMPRESS '<nome>' #NOME '</nome>' INTO #NOME1 LEAVING NO SPACE
+      MOVE NOME-MAE TO #NOME-MAE
+      COMPRESS '<mae>' #NOME-MAE '</mae>'
+      INTO #NOME-MAE1 LEAVING NO SPACE
+      MOVE NOME-PAI TO #NOME-PAI
+      COMPRESS '<pai>' #NOME-PAI '</pai>' INTO
+       #NOME-PAI1 LEAVING NO SPACE
+      PERFORM PESQ-DADOS-CRIMINAL
+      V_OBS      := '<observacao>na</observacao>'
+      V_DATILOSC := '<datiloscopia>na</datiloscopia>'
+      V_FORAGIDO := '<foragido>na</foragido>'
+*     V_OBITO    := '<obito>na</obito>'
+      IF SUBSTR(APELIDO-ALCUNHAS,1,1) NE '*'
+         V_ALCUNHA := '<alcunhas_outros_nomes available="true">'
+         V_ALCUNHANOME := '<nome>'
+         COMPRESS V_ALCUNHANOME APELIDO-ALCUNHAS '</nome>'
+         INTO V_ALCUNHANOME LEAVING NO SPACE
+      ELSE
+         V_ALCUNHA := '<alcunhas_outros_nomes available="false">'
+         V_ALCUNHANOME := '<nome>na</nome>'
+      END-IF
+      IF NUME-DOCUM-APRESENT NE 0
+         V_DOC       := '<documentos available="true">'
+         V_DOCTIPO   := '<tipo>RG</tipo>'
+         V_DOCNUM    := '<numero>'
+         COMPRESS V_DOCNUM NUME-DOCUM-APRESENT '</numero>'
+         INTO V_DOCNUM LEAVING NO SPACE
+         V_DOCORGAO  := '<orgao_expedidor>'
+         COMPRESS V_DOCORGAO ORGAO-EXP-UF '</orgao_expedidor>'
+         INTO V_DOCORGAO LEAVING NO SPACE
+         V_DOCDATA   := '<data_expedicao>na</data_expedicao>'
+      ELSE
+         V_DOC       := '<documentos available="false">'
+         V_DOCTIPO   := '<tipo>na</tipo>'
+         V_DOCNUM    := '<numero>999</numero>'
+         V_DOCORGAO  := '<orgao_expedidor>na</orgao_expedidor>'
+         V_DOCDATA   := '<data_expedicao>na</data_expedicao>'
+      END-IF
+      IF FALECIDO NE ' '
+         V_OBITO := '<obito>sim</obito>'
+      ELSE
+         V_OBITO := '<obito>nao</obito>'
+      END-IF
+*     IF OBS      <> SPACE(80)
+*        V_OBS   := OBS
+*     END-IF
+   END-FIND
+   IF *COUNTER(F1.) =  0
+      PERFORM MOSTRA-ERRO
+   ELSE
+      PERFORM MOSTRA-TELA
+   END-IF
+END-SUBROUTINE
+*
+DEFINE SUBROUTINE PESQ-DADOS-CRIMINAL
+**
+TAB        := 1       /* PESQUISA TABELA DE MUNICIPIOS
+COD        := COD-MUNICIPIO-NASCIMENTO
+PERFORM SISST001 PESQ RESP
+MOVE UF-NATURALIDADE TO #UF-NASC
+*
+IF RESP = '#'
+  TAB        := 37      /* PESQUISA TABELA DE PAISES
+  COD        := DINIDE-COMUNA
+  PERFORM SISST001 PESQ RESP
+  MOVE '##' TO #UF-NASC
+END-IF
+*
+* CODM       := COD
+DESCMUN    := RESP
+COMPRESS '<naturalidade>' DESCMUN '-' #UF-NASC '</naturalidade>'
+INTO COMUN LEAVING NO SPACE
+*
+* VERIFICACAO DE ENDERECO
+IF AV-RUA  GT '   '
+  TAB        := 1       /* PESQUISA TABELA DE MUNICIPIOS
+  COD        := MUNICIPIO
+  PERFORM SISST001 PESQ RESP
+  DESCMUN    := RESP
+  MOVE ESTADO   TO #UF-END
+*
+ COMPRESS  AV-RUA NUMERO BAIRRO '-' DESCMUN '-' #UF-END  INTO #END
+  V_END     := '<enderecos available="true">'
+  V_ENDTIPO := '<tipo>Residencial</tipo>'
+  V_ENDDESC := '<descricao>'
+  COMPRESS V_ENDDESC #END '</descricao>' INTO
+  V_ENDDESC LEAVING NO SPACE
+ ELSE
+   V_END     := '<enderecos available="false">'
+   V_ENDTIPO := '<tipo>na</tipo>'
+   V_ENDDESC := '<descricao>na</descricao>'
+ END-IF
+  DECIDE ON FIRST VALUE OF #STATUSREG
+    VALUE '1'
+      #DESCREG := 'REG ATIVO'
+    VALUE '2'
+      #DESCREG := 'EM BAIXA'
+    VALUE '3'
+      #DESCREG := 'CANCELADO'
+    VALUE '4'
+      #DESCREG := 'CONDICIONAL'
+    VALUE '6'
+      #DESCREG := 'EXT.PUNIBIL'
+    VALUE '7'
+      #DESCREG := 'MAND.PRISAO'
+    NONE
+      IGNORE
+  END-DECIDE
+  DECIDE ON FIRST VALUE OF #ALTURA
+    VALUE  0
+      #DESC-ALTURA    := '  '
+    VALUE  1
+      #DESC-ALTURA    := 'Ate 1,60 '
+    VALUE  2
+      #DESC-ALTURA    := '1,61-1,70'
+    VALUE  3
+      #DESC-ALTURA    := '1,71-1,80'
+    VALUE  4
+      #DESC-ALTURA    := '1,81-1,90'
+    VALUE  5
+      #DESC-ALTURA    := 'Mais 1,90'
+    NONE
+      IGNORE
+  END-DECIDE
+  TAB := 203
+  COD := #CUTIS
+  PERFORM SISST001 PESQ RESP
+  #DESC-CUTIS := RESP
+    DECIDE ON FIRST VALUE OF #COR-OLHOS
+      VALUE  0
+        #DESC-OLHO      := '  '
+     VALUE  11
+        #DESC-OLHO      := 'Castanhos'
+      VALUE  12
+       #DESC-OLHO      := 'Pretos'
+     VALUE  13
+       #DESC-OLHO      := 'Azuis'
+     VALUE  14
+       #DESC-OLHO      := 'Verdes'
+    VALUE  15
+       #DESC-OLHO      := '2 Cores'
+     NONE VALUE
+        IGNORE
+    END-DECIDE
+  COMPRESS  #DESC-ALTURA  #DESC-CUTIS 'OLHOS'
+  #DESC-OLHO INTO #DESC
+    DECIDE ON FIRST VALUE OF #INSTRUCAO
+      VALUE  1
+        #GINSTRUCAO     := '<Nao Alfabetizado>'
+      VALUE  2
+        #GINSTRUCAO     := '1? Grau Incompleto'
+      VALUE  3
+        #GINSTRUCAO     := '1? Grau Completo'
+      VALUE  4
+        #GINSTRUCAO     := '2? Grau Incompleto'
+      VALUE  5
+        #GINSTRUCAO     := '2? Grau Completo'
+      VALUE  6
+        #GINSTRUCAO     := 'Superior Incompleto'
+      VALUE  2
+        #GINSTRUCAO     := 'Superior Completo'
+     NONE VALUE
+        #GINSTRUCAO     := 'na'
+    END-DECIDE
+    COMPRESS '<instrucao>' #GINSTRUCAO '</instrucao>' INTO
+    #GINSTRUCAO LEAVING NO SPACE
+    DECIDE ON FIRST VALUE OF #SEXO
+      VALUE  1
+        V_SEXO         := 'F'
+      VALUE  2
+        V_SEXO         := 'M'
+     NONE VALUE
+        V_SEXO         := 'na'
+    END-DECIDE
+   COMPRESS '<sexo>' V_SEXO '</sexo>' INTO
+   V_SEXO LEAVING NO SPACE
+ V_MOVPENIT :=
+ '<total_mov_penitenciaria link="false">0</total_mov_penitenciaria>'
+END-SUBROUTINE
+* **
+DEFINE SUBROUTINE MOSTRA-ERRO
+ #MENS := 'NENHUM REGISTRO ENCONTRADO COM O NOME INFORMADO'
+* WRITE NOTITLE'<BEAN_ERROR>' #MENS'</BEAN_ERROR>'
+ WRITE  #MENS
+END-SUBROUTINE
+*
+DEFINE SUBROUTINE MOSTRA-TELA
+ IF #FIRST
+    WRITE NOTITLE'<bean_result>'
+    MOVE FALSE TO #FIRST
+ END-IF
+WRITE 002T '<individuo>'
+/003T PK_UF
+/002T #NOME1
+/002T #NOME-MAE1
+/002T #NOME-PAI1
+/003T COMUN
+/003T V_DATANASC1
+/003T V_SEXO
+/003T #PROFISSAO
+/003T #GINSTRUCAO
+/003T V_DATILOSC
+/003T V_DATAINC1
+/003T V_DATAMOV1
+/003T V_FORAGIDO
+/003T V_OBITO
+/003T V_OBS
+/002T '</individuo>'
+/002T V_ALCUNHA
+/003T '<alcunha_outro_nome>'
+/004T '<tipo>alcunha</tipo>'
+/004T V_ALCUNHANOME
+/003T '</alcunha_outro_nome>'
+/002T '</alcunhas_outros_nomes>'
+/002T V_DOC
+/003T '<documento>'
+/004T V_DOCNUM
+/004T V_DOCTIPO
+/004T V_DOCDATA
+/004T V_DOCORGAO
+/003T '</documento>'
+/002T '</documentos>'
+/002T V_END
+/003T '<endereco>'
+/004T V_ENDTIPO
+/004T V_ENDDESC
+/003T '</endereco>'
+/002T '</enderecos>'
+/003T '<caracteristicas_fisicas available="false">'
+/003T '<caracteristica>'
+/004T '<tipo>na</tipo>'
+/004T '<descricao>na</descricao>'
+/003T '</caracteristica>'
+/002T '</caracteristicas_fisicas>'
+/002T '<companhias available="false">'
+/003T '<companhia>'
+/004T '<tipo>na</tipo>'
+/004T '<nome>na</nome>'
+/003T '</companhia>'
+/002T '</companhias>'
+/002T '<modus_operandis available="false">'
+/003T '<descricao>na</descricao>'
+/002T '</modus_operandis>'
+/002T '<imagens available="false">'
+/003T '<imagem>'
+/004T '<tipo>na</tipo>'
+/004T '<data>na</data>'
+/004T '<url>na</url>'
+/003T '</imagem>'
+/002T '</imagens>'
+/002T '<totais>'
+/003T '<total_alvaras link="false">0</total_alvaras>'
+/003T '<total_condenacoes link="false">0</total_condenacoes>'
+/003T V_MOVPENIT
+/003T '<total_procedimentos link="false">0</total_procedimentos>'
+/003T '<total_processos link="false">0</total_processos>'
+/003T '<total_armas link="false">0</total_armas>'
+/003T '<total_mandados link="false">0</total_mandados>'
+/002T '</totais>'
+* /002T '</individuo>'
+END-SUBROUTINE
+*
+DEFINE SUBROUTINE MOSTRA-TELA-CIVIL
+IF #FIRST
+  WRITE NOTITLE'<bean_result>'
+  MOVE FALSE TO #FIRST
+END-IF
+INPUT USING MAP 'SCRM9904'
+RESET PESSOA(*)
+END-SUBROUTINE
+*
+DEFINE SUBROUTINE ZERA
+MOVE RIGHT CHAVE TO A-CHAVE
+EXAMINE FULL A-CHAVE  FOR ' ' REPLACE '0'
+END-SUBROUTINE
+*
+DEFINE SUBROUTINE GERA-FINAL
+RESET #NOMEFIM
+FOR J = 30 TO 1 STEP -1
+ LETRA:= SUBSTR(A-SUBNOME,J,1)
+ IF LETRA NE ' '
+   #NOMEFIM := SUBSTR(A-SUBNOME,1,J)
+   COMPRESS #NOMEFIM  'Z'INTO #NOMEFIM LEAVING NO SPACE
+   MOVE 1 TO J
+ END-IF
+END-FOR
+END-SUBROUTINE
+END

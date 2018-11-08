@@ -1,0 +1,90 @@
+* >Natural Source Header 000000
+* :Mode S
+* :CP
+* :LineIncrement 10
+* <Natural Source Header
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+* SISTEMA    : Sistema de Identificacao Criminal             *
+* PROGRAMA   : SCRP1540                                      *
+* OBJETIVO   : MANUTENCAO DE USUARIOS                        *
+* ANALISTA   : SOLON MIRANDA                                 *
+* Autor      : Jose Antonio Coelho                           *
+* Data       : 21 de Agosto de 1997                          *
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+DEFINE DATA
+GLOBAL USING SCRG001
+LOCAL  USING SCRLSENH
+LOCAL
+1 #IMP                  (A08)
+1 #NOME-CADASTRADO      (A30)
+1 #MATRICULA-CADASTRADO (N07)
+1 #SENHA-CADASTRADO     (A06)
+1 #SEU-NIVEL-TXT        (A22)
+1 #SEU-NIVEL            (A02)
+1 #NOME-CADASTROU       (A30)
+1 #MATRICULA-CADASTROU  (N07)
+1 #FUNC                 (A10) INIT <'RELATORY'>
+1 #OPCAO                (N01)
+1 #NOME-DO-MES          (A09)
+1 #HORARIO              (A08) INIT <*TIMX>
+1 #SENHA-ARQ            (A06)
+1 #HORA                 (N08)
+1 #DATAS                (N08)
+1 REDEFINE #DATAS
+  2 #DD   (N02)
+  2 #MM   (N02)
+  2 #AA   (N04)
+1 #DATA                 (N08)
+1 REDEFINE #DATA
+  2 #ANO       (N04)
+  2 #MES       (N02)
+  2 #DIA       (N02)
+END-DEFINE
+*
+SET  KEY ALL
+FORMAT (1) LS=133 PS=60
+SET  CONTROL 'MB'
+#VLT# := 8
+MOVE *PROGRAM TO #PROGRAMA#
+RD0. READ SENHA-VIEW BY SEN-NOME
+          MOVE SEN-MAT-ATUALIZADOR TO #MATRICULA-CADASTROU
+          MOVE SEN-MATRICULA       TO #MATRICULA-CADASTRADO
+          MOVE SEN-NOME            TO #NOME-CADASTRADO
+          MOVE SEN-NIVEL           TO #SEU-NIVEL
+          MOVE SEN-DATA-PROC       TO #DATA
+          MOVE SEN-HORA-PROC       TO #HORA
+          MOVE #ANO TO #AA
+          MOVE #MES TO #MM
+          MOVE #DIA TO #DD
+   FD1. FIND (1) SENHA-VIEW
+                 WITH SEN-MATRICULA = #MATRICULA-CADASTROU
+            MOVE SEN-NOME(FD1.) TO #NOME-CADASTROU
+   END-FIND
+   IF *COUNTER(FD1.) = 0
+      MOVE ALL '*'  TO #NOME-CADASTROU
+   END-IF
+WRITE (1) TITLE LEFT JUSTIFIED
+001T 'SECRETARIA DA SEGURANCA PUBLICA - SSP'
+099T 'Data..' *DATE /
+001T 'SISTEMA DE IDENTIFICACAO CRIMINAL'
+099T 'Hora..' *TIMX /
+001T 'COMPANHIA DE PROCESSAMENTO DE DADOS DA PARAIBA - CODATA'
+099T 'Pagina. ' *PAGE-NUMBER(1) //
+030T 'RELACAO DE USUARIOS CADASTRADOS NO SISTEMA' //
+001T '-' (113) /
+   DISPLAY (1) 'Nome do Usuario'  #NOME-CADASTRADO
+               'Matricula'        #MATRICULA-CADASTRADO
+               'Nivel/Acesso'     #SEU-NIVEL
+               'Cadastrado/Em :'  #DATAS(EM=99/99/9999)
+               'Horario'          #HORA (EM=99:99:99)
+               'Cadastrado por :' #NOME-CADASTROU
+               'Matricula Quem/Cadastrou' #MATRICULA-CADASTROU
+AT END OF PAGE(1)
+   WRITE(1) '-' (113)
+END-ENDPAGE
+  END-READ
+* --STACK TOP COMMAND 'SCRP1000' 
+STACK TOP COMMAND 'SCRP1500'  /* VERONICA - 12.06.17 
+INCLUDE SCRCERRO
+END

@@ -1,0 +1,294 @@
+* >Natural Source Header 000000
+* :Mode S
+* :CP
+* :LineIncrement 10
+* <Natural Source Header
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+* SISTEMA    : Sistema de Identificacao Criminal             *
+* PROGRAMA   : SCRP120A                                      *
+* O QUE FAZ  ? Alteracao da Ficha Indice Criminal            *
+* Autor      : Jose Antonio Coelho                           *
+* Data       : 29 de Julho de 1997                           *
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+* Mapas      : SCRM2000, SCRM1110                            *
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+DEFINE DATA
+GLOBAL USING SCRG001
+LOCAL  USING SCRVARIA
+LOCAL  USING SCRLNUME
+LOCAL
+1 CHAVE   (A01) INIT <'A'>
+1 DMANAS  (A08)
+1 REDEFINE DMANAS
+  2 ANAS  (A04)
+  2 MNAS  (A02)
+  2 DNAS  (A02)
+1 #ULT-NUM(N11)
+1 #MAE-LIMPA (A60)
+1 #NATURAL   (A30)
+1 #CRIME     (A01)
+1 #INFRACAO  (C)
+1 #CV-D      (C)
+1 #CV-M      (C)
+1 #CV-A      (C)
+1 #CV-INCIDE (C)
+END-DEFINE
+RESET #CONTADOR#
+FORMAT PS=23
+SET KEY ALL
+#PROGRAMA# := *PROGRAM
+#FUNCAO# := 'Alteracao'
+SET CONTROL 'MB'
+MOVE (AD=I) TO #VAR
+RP1. REPEAT
+  #VLT# := 2
+  #CHV  := '*'
+  ADD 1 TO #LOOP
+  #OCORRENCIA := 1
+INPUT USING MAP 'SCRM2000'
+FD33. FIND (1) CRIMINAL-VIEW WITH
+            REGISTRO-ESTADUAL-GERAL = #REG_GERAL
+  IF *COUNTER(FD33.) GT 0
+      IF STATUS-REG = 5
+      REINPUT 'Esta ficha esta" excluida - Nao pode ser alterada' ALARM
+      END-IF
+      MOVE CRIMINAL-VIEW.DATA-NASC TO DMANAS
+MOVE  CRIMINAL-VIEW.REGISTRO-ESTADUAL-GERAL  TO #REG_GERAL
+MOVE  CRIMINAL-VIEW.NOME-COMPLETO            TO #NOME-COMPLETO
+MOVE  CRIMINAL-VIEW.NOME-PAI                 TO #PAI
+MOVE  CRIMINAL-VIEW.NOME-MAE                 TO #MAE
+MOVE  CRIMINAL-VIEW.APELIDO-ALCUNHAS         TO #ALCUNHA
+MOVE  CRIMINAL-VIEW.NATURALIDADE             TO #NATURALIDADE
+MOVE  CRIMINAL-VIEW.COD-MUNICIPIO-NASCIMENTO TO #COD-MUN-NASCIMENTO
+MOVE  CRIMINAL-VIEW.UF-NATURALIDADE          TO #UF-NASCIMENTO
+MOVE  CRIMINAL-VIEW.OBS(*)                   TO #OBSERVACOEZ(*)
+#OBSERVACOES(1) := #OBSERVACOEZ(1)
+#OBSERVACOES(2) := #OBSERVACOEZ(2)
+#OBSERVACOES(3) := #OBSERVACOEZ(3)
+#OBSERVACOES(4) := #OBSERVACOEZ(4)
+IF #PAI = '************' #PAI := '*' END-IF
+IF #MAE = '************' #MAE := '*' END-IF
+IF #ALCUNHA = '************' #ALCUNHA := '*' END-IF
+* ********
+  MOVE (AD=IP) TO #CV-REG-GER
+  INPUT USING MAP 'SCRM1110'
+  IF *PF-KEY = 'PF3'
+     FETCH 'SCRP120A'
+  END-IF
+  MOVE DMANAS TO #DATA_NASC
+  MOVE (AD=IP) TO #CV-REG-GER #INFRACAO
+      MOVE *DATN         TO #DATA_ATU
+      MOVE *TIME         TO #TEMPO
+      MOVE #TEMPOHORA    TO #HORA
+      MOVE #TEMPOMIN     TO #MIN
+      MOVE #TEMPOSEG     TO #SEG
+      MOVE #TEMPONSE     TO #NSE
+      MOVE #DATA_NASC    TO #DATA_NASC0
+      MOVE #DIA_NASC     TO #DIA_NASC0
+      MOVE #MES_NASC     TO #MES_NASC0
+      MOVE #ANO_NASC     TO #ANO_NASC0
+      MOVE #D-REG        TO #D-REG0
+      MOVE #M-REG        TO #M-REG0
+      MOVE #A-REG        TO #A-REG0
+      IF #OBSERVACOES(1) = ' '
+         IF #CHV = '*'
+           RESET #CHV
+           REINPUT 'Nenhuma ocorrencia foi informada.Se nao quiser'
+                 - ' informar Tecle<ENTER>p/confirmar'
+                                            MARK *#OBSERVACOES(1) ALARM
+         END-IF
+      ELSE
+      PERFORM GRAVA-OCORRENCIAS
+      END-IF
+*
+      IF #MAE = '*' OR = ' '
+         MOVE '************' TO #MAE
+      END-IF
+      IF #PAI = '*' OR = ' '
+         MOVE '************' TO #PAI
+      END-IF
+      IF #ALCUNHA     = ' ' OR = '*'
+         MOVE '************' TO #ALCUNHA
+      END-IF
+      IF #NATURALIDADE = '*'
+         MOVE '************' TO #NATURALIDADE
+      END-IF
+      IF #COD-MUN-NASCIMENTO LT 1
+         MOVE 0 TO #COD-MUN-NASCIMENTO
+      END-IF
+      IF #UF-NASCIMENTO =  ' '
+         MOVE '**' TO #UF-NASCIMENTO
+      END-IF
+*
+      MOVE #DATA_NASC TO #DATA_NASC0
+      CRIMINAL-VIEW.OBS(*) := #OBSERVACOEZ(*)
+      CRIMINAL-VIEW.REGISTRO-ESTADUAL-GERAL  := #REG_GERAL
+      CRIMINAL-VIEW.TIPO-REG                 := 'AL'
+      CRIMINAL-VIEW.NOME-COMPLETO            := #NOME-COMPLETO
+      CRIMINAL-VIEW.NOME-PAI                 := #PAI
+      CRIMINAL-VIEW.NOME-MAE                 := #MAE
+      CRIMINAL-VIEW.DATA-NASC                := #DATA_NASC00
+      CRIMINAL-VIEW.APELIDO-ALCUNHAS         := #ALCUNHA
+      CRIMINAL-VIEW.NATURALIDADE             := #NATURAL
+      CRIMINAL-VIEW.COD-MUNICIPIO-NASCIMENTO := #COD-MUN-NASCIMENTO
+      CRIMINAL-VIEW.UF-NATURALIDADE          := #UF-NASCIMENTO
+      CRIMINAL-VIEW.DATDOC-ATU               := #DATA_ATU
+      CRIMINAL-VIEW.HORA-ATU                 := #HORA_ATU
+      CRIMINAL-VIEW.MATFUNC-ATU              := #MATRICULA#
+* ------------------------------------------------ *
+      UPDATE(FD33.)
+  END-IF
+END-FIND
+  IF *COUNTER(FD33.) EQ 0
+     BACKOUT TRANSACTION
+     REINPUT 'Ficha Criminal nao cadastrada' ALARM
+  END-IF
+DEFINE SUBROUTINE GRAVA-OCORRENCIAS
+  #I := 5
+  IF #OBSERVACOES(1) NE ' '
+    IF NOT (*PF-KEY = 'PF3' OR = 'ENTR')
+      REINPUT 'Tecla invalida' ALARM
+    END-IF
+    #OBSERVACOEZ(1) := #OBSERVACOES(1)
+    #OBSERVACOEZ(2) := #OBSERVACOES(2)
+    #OBSERVACOEZ(3) := #OBSERVACOES(3)
+    #OBSERVACOEZ(4) := #OBSERVACOES(4)
+  END-IF
+  FOR #OCORRENCIA = 2 TO 40
+      IF #OCORRENCIA = 2
+        COMPUTE #J = #OCORRENCIA + 4
+        COMPUTE #L = #OCORRENCIA + 5
+        COMPUTE #M = #OCORRENCIA + 6
+      ELSE
+        COMPUTE #I = #M + 1
+        COMPUTE #J = #M + 2
+        COMPUTE #L = #M + 3
+        COMPUTE #M = #M + 4
+      END-IF
+      #OBSERVACOES(1)  := #OBSERVACOEZ(#I)
+      #OBSERVACOES(2)  := #OBSERVACOEZ(#J)
+      #OBSERVACOES(3)  := #OBSERVACOEZ(#L)
+      #OBSERVACOES(4)  := #OBSERVACOEZ(#M)
+*     RESET #OBSERVACOES(*)
+      INPUT NO ERASE
+        17/01 'Incidencia No.:' #OCORRENCIA(AD=OIL)
+        18/01 ' ' #OBSERVACOES(1)(AD=MIL'_')
+        19/01 ' ' #OBSERVACOES(2)(AD=MIL'_')
+        20/01 ' ' #OBSERVACOES(3)(AD=MIL'_')
+        21/01 ' ' #OBSERVACOES(4)(AD=MIL'_')
+      SET KEY PF3 ENTR
+      IF NOT (*PF-KEY = 'PF3' OR = 'ENTR')
+        REINPUT 'Tecla invalida' ALARM
+      END-IF
+      IF *PF-KEY = 'PF3'
+        FETCH 'SCRP120A'
+      END-IF
+*     IF #OBSERVACOES(1) = ' '
+*        ESCAPE BOTTOM
+*     END-IF
+      #OBSERVACOEZ(#I) := #OBSERVACOES(1)
+      #OBSERVACOEZ(#J) := #OBSERVACOES(2)
+      #OBSERVACOEZ(#L) := #OBSERVACOES(3)
+      #OBSERVACOEZ(#M) := #OBSERVACOES(4)
+*     RESET #OBSERVACOES(*)
+      FOR #X = 4 TO 2 STEP -1
+        IF #OBSERVACOES(#X) NE ' '
+          COMPUTE #W = #X - 1
+          FOR #Y = #W TO 1 STEP -1
+            IF #OBSERVACOES(#Y) = ' '
+              REINPUT
+                'Existe espaco nas linhas acima das que voce informou'
+                MARK *#OBSERVACOES(#Y) ALARM
+            END-IF
+          END-FOR
+        END-IF
+      END-FOR
+      IF #OBSERVACOES(1) = ' '
+        ESCAPE BOTTOM
+      END-IF
+    END-FOR
+* END-IF
+  END-SUBROUTINE
+  DEFINE SUBROUTINE VER-STATUS
+  DECIDE ON FIRST VALUE OF #STATUS0
+    VALUE 0
+      #DESCREG := 'Registro Normal'
+    VALUE 1
+      #DESCREG := 'Registro Cancelado'
+    VALUE 2
+      #DESCREG := 'Registro com Mandato de Prisao Preventiva'
+    VALUE 3
+      #DESCREG := 'Condenado'
+    NONE
+      IGNORE
+  END-DECIDE
+  END-SUBROUTINE
+* ------------------------------------------------ *
+  SET CONTROL 'N'
+  INPUT NO ERASE ALARM 17/29
+    'CONFIRMACAO..(S/N).:'(I) #CONF(AD=AIT'_')
+  SET KEY PF3 ENTR
+  IF NOT (*PF-KEY = 'PF3' OR = 'ENTR')
+    REINPUT 'Tecla invalida' ALARM
+  END-IF
+  IF *PF-KEY = 'PF3'
+    FETCH 'SCRP120A'
+  END-IF
+  IF #CONF = ' '
+    REINPUT 'Confirme "S" ou "N"' MARK *#CONF ALARM
+  END-IF
+  IF NOT #CONF = 'S' OR = 'N'
+    REINPUT 'Confirmacao invalida' MARK *#CONF ALARM
+  END-IF
+  IF #CONF = 'N'
+    BACKOUT TRANSACTION
+    FETCH 'SCRP120A'
+  ELSE
+    IF #LOOP = 1
+      SET CONTROL 'WC08L50B33/20F'
+      INPUT  (IP=OFF SG=OFF) ALARM
+        02/01 'Informe: Matricula:' #MAT(AD=AIL'_')
+        'Senha:' #SENHA(AD=ANT)
+         03/01 'Para Confirmar a Operacao Tecle ENTRA,'
+         04/01 'ou PF3 para Sair'
+      IF *PF-KEY = 'PF3'
+        INPUT NO ERASE ALARM 05/03
+          'ATUALIZACAO NAO CONFIRMADA - TECLE <ENTER>'(I)
+        BACKOUT TRANSACTION
+        FETCH 'SCRP120A'
+      END-IF
+      IF #MAT = 0
+        REINPUT 'Informe a Matricula' MARK *#MAT   ALARM
+      END-IF
+      IF #MAT NE #MATRICULA#
+          REINPUT 'Matricula nao corresponde a Matricula Inicial'
+                                                       MARK *#MAT ALARM
+      END-IF
+      IF #SENHA = ' '
+        REINPUT 'Informe sua Senha'     MARK *#SENHA ALARM
+      END-IF
+      IF #SENHA NE #SENHA#
+          REINPUT 'Senha nao Corresponde a Senha Inicial'
+                                                  MARK *#SENHA ALARM
+      END-IF
+      END TRANSACTION
+      INPUT NO ERASE ALARM 05/01
+        'REGISTRO ALTERADO COM SUCESSO - TECLE <ENTER>' (I)
+      RESET  DNAS MNAS ANAS DEDOS(*,*) #CRIME
+      SET CONTROL 'WB'
+    ELSE
+      END TRANSACTION
+      SET CONTROL 'WC06L35B33/20F'
+      INPUT  (IP=OFF SG=OFF) ALARM
+        01/01 'REGISTRO ALTERADO COM SUCESSO'(I)
+        02/08 'TECLE <ENTER>' (I)
+      RESET  DNAS MNAS ANAS DEDOS(*,*) #CRIME
+      SET CONTROL 'WB'
+    END-IF
+* ----------------------------
+  END-IF
+  RESET #VARIAVEIS_DA_TELA #CHAVE #TEXT #CRIME
+  MOVE (AD=I) TO #CV-DATA #CV-REG-GER #CV-MAE #CV-NOME #VAR
+  INCLUDE SCRCERRO
+END-REPEAT
+END

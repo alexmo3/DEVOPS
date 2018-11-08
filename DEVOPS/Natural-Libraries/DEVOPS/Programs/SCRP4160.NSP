@@ -1,0 +1,109 @@
+* >Natural Source Header 000000
+* :Mode S
+* :CP
+* :LineIncrement 10
+* <Natural Source Header
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+* SISTEMA    : Sistema de Identificacao Criminal             *
+* PROGRAMA   : SCRP4160 - ALTERACAO DE FLAGS                 *
+* AUTOR      : ANALICE                                       *
+* DATA       : MARCO 2004                                    *
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *
+DEFINE DATA
+GLOBAL USING SCRG001
+LOCAL USING SCRLSENH
+LOCAL
+1 CRIM VIEW OF SIC-CADASTRO
+  2 DT-REMESSA-INFOSEG
+  2 SQ-REMESSA-INFOSEG
+  2 REGISTRO-ESTADUAL-GERAL
+  2 FL-REMESSA-INFOSEG
+  2 FL-REMESSA-APELIDO-INFOSEG
+  2 CD-REGISTRO-GERAL
+  2 IG-UF
+  2 NOME-COMPLETO
+1 #NOME-COMPLETO (A60)
+1 REDEFINE #NOME-COMPLETO
+ 2 #NOME    (A45)
+ 2 #NOMEFIL (A15)
+1 #REG-GERAL           (N11)
+1 #FUNC (A10) INIT <'INFOSEG'>
+1 #PROGRAM (A08)
+1 #FL-REMESSA-INFOSEG (A1)
+1 #FL-REMESSA-APELIDO (A1)
+1 #CD-REGISTRO (A2)
+1 REDEFINE #CD-REGISTRO
+  2 #CD-SITUACAO (A1)
+  2 #CD-OPERACAO (A1)
+1 #CONF   (A01)
+1 WFL(A20)
+1 REDEFINE WFL
+  2 WFL-DATA (A8)
+  2 WFL-SEQ  (A2)
+  2 WFL-10   (A2)
+  2 WFL-11   (A2)
+  2 WFL-12   (A2)
+  2 WFL-13   (A2)
+  2 WFL-14   (A2)
+1 WDT-REMESSA   (A08)
+1 REDEFINE WDT-REMESSA
+  2 WDT-REMESSAN   (N08)
+1 WSQ-REMESSA   (A02)
+END-DEFINE
+MOVE *PROGRAM TO #PROGRAM
+INCLUDE SISCPFS
+* **********************************
+* FAZ ALTERACAO DE FLAGS
+* **********************************
+REPEAT
+  RESET #REG-GERAL
+  INPUT USING MAP 'SCRM4160'
+  IF *PF-KEY NE 'PF3'
+    F1. FIND(1) CRIM WITH REGISTRO-ESTADUAL-GERAL EQ #REG-GERAL
+ MOVE CRIM.NOME-COMPLETO              TO #NOME-COMPLETO
+      MOVE CRIM.DT-REMESSA-INFOSEG         TO WDT-REMESSAN
+      MOVE CRIM.SQ-REMESSA-INFOSEG         TO WSQ-REMESSA
+      MOVE CRIM.CD-REGISTRO-GERAL          TO #CD-REGISTRO
+      MOVE CRIM.FL-REMESSA-INFOSEG         TO #FL-REMESSA-INFOSEG
+      MOVE CRIM.FL-REMESSA-APELIDO-INFOSEG TO #FL-REMESSA-APELIDO
+      MOVE CRIM.IG-UF                      TO WFL
+      INPUT USING MAP 'SCRM4161'
+      IF *PF-KEY NE 'PF3'
+        MOVE WDT-REMESSAN        TO CRIM.DT-REMESSA-INFOSEG
+        MOVE WSQ-REMESSA         TO CRIM.SQ-REMESSA-INFOSEG
+        MOVE #CD-REGISTRO        TO CRIM.CD-REGISTRO-GERAL
+        MOVE #FL-REMESSA-INFOSEG TO CRIM.FL-REMESSA-INFOSEG
+        MOVE #FL-REMESSA-APELIDO TO CRIM.FL-REMESSA-APELIDO-INFOSEG
+        MOVE WFL                 TO CRIM.IG-UF
+        INPUT NO ERASE 21/25 'CONFIRMA ALTERACAO DE FLAGS?' (AD=I)
+          #CONF (AD=AIT'_')
+        SET KEY PF3 ENTR
+        IF NOT (*PF-KEY = 'PF3' OR = 'ENTR')
+          REINPUT 'Tecla invalida' ALARM
+        END-IF
+        IF *PF-KEY = 'PF3'
+          ESCAPE TOP
+        END-IF
+        IF #CONF = ' '
+          REINPUT 'Confirme "S" ou "N"' MARK *#CONF ALARM
+        END-IF
+        IF NOT #CONF = 'S' OR = 'N'
+          REINPUT 'Confirmacao invalida' MARK *#CONF ALARM
+        END-IF
+        IF #CONF = 'S'
+          UPDATE (F1.)
+          END TRANSACTION
+        ELSE
+          BACKOUT TRANSACTION
+        END-IF
+      END-IF
+    END-FIND
+    IF *COUNTER(F1.) EQ 0
+      REINPUT 'FICHA NAO CADASTRADA. TECLE ENTER...'
+    END-IF
+  ELSE
+    FETCH 'SCRP4100'
+  END-IF
+END-REPEAT
+* ************
+END
